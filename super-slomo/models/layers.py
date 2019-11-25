@@ -5,10 +5,12 @@ class UNet(tf.keras.Model):
     def __init__(self, out_filters, *args, **kwargs):
         super(UNet).__init__(name="UNet", *args, **kwargs)
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=0.1)
-        self.conv1 = tf.keras.layers.Conv2D(filters=32, kernel_size=7, strides=1,
-                                            padding=3)
-        self.conv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=7, strides=1,
-                                            padding=3)
+        self.conv1 = tf.keras.layers.Conv2D(
+            filters=32, kernel_size=7, strides=1, padding=3
+        )
+        self.conv2 = tf.keras.layers.Conv2D(
+            filters=32, kernel_size=7, strides=1, padding=3
+        )
         self.encoder1 = Encoder(64, 5)
         self.encoder2 = Encoder(128, 3)
         self.encoder3 = Encoder(256, 3)
@@ -19,8 +21,9 @@ class UNet(tf.keras.Model):
         self.decoder3 = Decoder(128)
         self.decoder4 = Decoder(64)
         self.decoder5 = Decoder(32)
-        self.conv3 = tf.keras.layers.Conv2D(filters=out_filters, kernel_size=3, strides=1,
-                                            padding=1)
+        self.conv3 = tf.keras.layers.Conv2D(
+            filters=out_filters, kernel_size=3, strides=1, padding=1
+        )
 
     def call(self, inputs, training=False, **kwargs):
         x = self.conv1(inputs)
@@ -47,6 +50,7 @@ class Encoder(tf.keras.layers.Layer):
     Average Pooling -> CNN + Leaky ReLU -> CNN + Leaky ReLU
     Used to create a UNet like architecture.
     """
+
     def __init__(self, filters, kernel_size, **kwargs):
         super(Encoder).__init__(**kwargs)
         self.padding = (kernel_size - 1) // 2
@@ -54,8 +58,18 @@ class Encoder(tf.keras.layers.Layer):
         self.kernel_size = kernel_size
 
     def build(self, input_shape):
-        self.conv1 = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=self.kernel_size, strides=1, padding=self.padding)
-        self.conv2 = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=self.kernel_size, strides=1, padding=self.padding)
+        self.conv1 = tf.keras.layers.Conv2D(
+            filters=self.filters,
+            kernel_size=self.kernel_size,
+            strides=1,
+            padding=self.padding,
+        )
+        self.conv2 = tf.keras.layers.Conv2D(
+            filters=self.filters,
+            kernel_size=self.kernel_size,
+            strides=1,
+            padding=self.padding,
+        )
         self.avg_pool = tf.keras.layers.AveragePooling2D()
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=0.1)
 
@@ -73,13 +87,18 @@ class Decoder(tf.keras.layers.Layer):
     Bilinear interpolation -> CNN + Leaky ReLU -> CNN + Leaky ReLU
     Used to create a UNet like architecture.
     """
+
     def __init__(self, filters, **kwargs):
         super(Decoder).__init__(**kwargs)
         self.filters = filters
 
     def build(self, input_shape):
-        self.conv1 = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=3, strides=1, padding=1)
-        self.conv2 = tf.keras.layers.Conv2D(filters=self.filters, kernel_size=3, strides=1, padding=1)
+        self.conv1 = tf.keras.layers.Conv2D(
+            filters=self.filters, kernel_size=3, strides=1, padding=1
+        )
+        self.conv2 = tf.keras.layers.Conv2D(
+            filters=self.filters, kernel_size=3, strides=1, padding=1
+        )
         self.interpolation = tf.keras.layers.UpSampling2D(interpolation="bilinear")
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=0.1)
 
@@ -92,6 +111,3 @@ class Decoder(tf.keras.layers.Layer):
         cat = self.conv2(cat)
         cat = self.leaky_relu(cat)
         return cat
-
-
-
