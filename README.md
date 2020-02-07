@@ -3,6 +3,8 @@
 * [Paper](https://arxiv.org/abs/1712.00080)
 * [Project](https://people.cs.umass.edu/~hzjiang/projects/superslomo/)
 * [PyTorch implementation](https://github.com/avinashpaliwal/Super-SloMo)
+* [TensorFlow implementation](https://github.com/rmalav15/Super-SloMo)
+* [Part of main project](https://github.com/MayankSingal/Super-SlowMo)
 
 ### Dataset links
 
