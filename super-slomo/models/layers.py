@@ -111,3 +111,29 @@ class Decoder(tf.keras.layers.Layer):
         cat = self.conv2(cat)
         cat = self.leaky_relu(cat)
         return cat
+
+
+class BackWarp(tf.keras.layers.Layer):
+    """
+    Backwarping to an image.
+    Generate I_0 <- backwarp(F_0_1, I_1) given optical flow from frame I_0 to I_1 -> F_0_1 and frame I_1.
+    """
+    def __init__(self, width, height, **kwargs):
+        super(BackWarp).__init__(**kwargs)
+        self.width = width
+        self.height = height
+        self.grid_w = tf.meshgrid(width)
+        self.grid_h = tf.meshgrid(height)
+
+    def call(self, inputs, **kwargs):
+        image, flow = inputs
+        # Extract horizontal and vertical flows.
+        u = flow[:, 0, :, :]
+        v = flow[:, 1, :, :]
+        # Broadcast an array for a compatible shape
+        w = tf.add(self.grid_w.expand_dims(0).broadcast_to(u), u)
+        h = tf.add(self.grid_h.expand_dims(0).broadcast_to(v), v)
+        return super().call(inputs, **kwargs)
+
+
+
