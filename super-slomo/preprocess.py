@@ -62,22 +62,26 @@ if __name__ == "__main__":
 
     # extract train
     train_dir = Path(args.input_dir) / "train"
-    tmp_dir = Path(train_dir) / "tmp"
+    train_dir_out = Path(args.output_dir) / "train"
+    tmp_dir = train_dir_out / "tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     extract_frames(train_dir, tmp_dir, args.img_width, args.img_height)
-    group_frames(tmp_dir, Path(args.output_dir) / "train")
+    group_frames(tmp_dir, train_dir_out)
+    shutil.rmtree(tmp_dir)
 
     # extract test
     test_dir = Path(args.input_dir) / "test"
-    tmp_dir = Path(test_dir) / "tmp"
+    test_dir_out = Path(args.output_dir) / "test"
+    tmp_dir = test_dir_out / "tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     extract_frames(test_dir, tmp_dir, args.img_width, args.img_height)
-    group_frames(tmp_dir, Path(args.output_dir) / "test")
+    group_frames(tmp_dir, test_dir_out)
+    shutil.rmtree(tmp_dir)
 
     # random sampling for validation
-    test_files = [folder for folder in test_dir.glob("**")]
+    test_files = [folder for folder in test_dir_out.glob("**")]
     sampled = random.sample(range(len(test_files)), 100)
     val_dir = Path(args.output_dir) / "val"
     val_dir.mkdir(parents=True, exist_ok=True)
     for s in sampled:
-        shutil.move("{}/{}".format(test_dir, s), "{}/{}".format(val_dir, s))
+        shutil.move("{}/{}".format(test_dir_out, s), "{}/{}".format(val_dir, s))
