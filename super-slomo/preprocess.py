@@ -61,15 +61,15 @@ if __name__ == "__main__":
     args = args_parser()
 
     # extract train
-    train_dir = Path(args.input_dir + "train")
-    tmp_dir = Path(train_dir + "/tmp")
+    train_dir = Path(args.input_dir) / "train"
+    tmp_dir = Path(train_dir) / "tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     extract_frames(train_dir, tmp_dir, args.img_width, args.img_height)
     group_frames(tmp_dir, Path(args.output_dir + "train"))
 
     # extract test
-    test_dir = Path(args.input_dir + "test")
-    tmp_dir = Path(test_dir + "/tmp")
+    test_dir = Path(args.input_dir) / "test"
+    tmp_dir = Path(test_dir) / "tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     extract_frames(test_dir, tmp_dir, args.img_width, args.img_height)
     group_frames(tmp_dir, Path(args.output_dir + "test"))
