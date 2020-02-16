@@ -1,6 +1,7 @@
 import tensorflow as tf
 import tensorflow_addons as ta
 
+
 class UNet(tf.keras.Model):
     def __init__(self, out_filters, *args, **kwargs):
         super(UNet).__init__(name="UNet", *args, **kwargs)
@@ -26,23 +27,23 @@ class UNet(tf.keras.Model):
         )
 
     def call(self, inputs, training=False, **kwargs):
-        x = self.conv1(inputs)
-        x = self.leaky_relu(x)
-        skip = self.conv2(x)
+        x_enc = self.conv1(inputs)
+        x_enc = self.leaky_relu(x_enc)
+        skip = self.conv2(x_enc)
         skip1 = self.leaky_relu(skip)
         skip2 = self.encoder1(skip1)
         skip3 = self.encoder2(skip2)
         skip4 = self.encoder3(skip3)
         skip5 = self.encoder4(skip4)
-        x = self.encoder5(skip5)
-        x = self.decoder1([x, skip5])
-        x = self.decoder2([x, skip4])
-        x = self.decoder3([x, skip3])
-        x = self.decoder4([x, skip2])
-        x = self.decoder5([x, skip1])
-        x = self.conv3(x)
-        x = self.leaky_relu(x)
-        return x
+        x_enc = self.encoder5(skip5)
+        x_dec = self.decoder1([x_enc, skip5])
+        x_dec = self.decoder2([x_dec, skip4])
+        x_dec = self.decoder3([x_dec, skip3])
+        x_dec = self.decoder4([x_dec, skip2])
+        x_dec = self.decoder5([x_dec, skip1])
+        x_dec = self.conv3(x_dec)
+        x_dec = self.leaky_relu(x_dec)
+        return x_dec, x_enc
 
 
 class Encoder(tf.keras.layers.Layer):
@@ -118,10 +119,82 @@ class BackWarp(tf.keras.layers.Layer):
     Backwarping to an image.
     Generate I_0 <- backwarp(F_0_1, I_1) given optical flow from frame I_0 to I_1 -> F_0_1 and frame I_1.
     """
+
     def __init__(self, width, height, **kwargs):
         super(BackWarp).__init__(**kwargs)
 
     def call(self, inputs, **kwargs):
         image, flow = inputs
-        imgOut = ta.image.dense_image_warp(image,flow)
-        return imgOut
+        img_backwarp = ta.image.dense_image_warp(image, flow)
+        return img_backwarp
+
+
+class OpticalFlow(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(OpticalFlow).__init__(**kwargs)
+        self.t = 0.5
+        self.flow_interp_layer = UNet(5, name="flow_interp")
+
+    def call(self, inputs, **kwargs):
+        # flow computation
+        f_01, f_10 = inputs[:, 2:, :, :], inputs[:, :2, :, :]
+        f_t0 = tf.add(
+            tf.multiply((-1 * (1 - self.t) * self.t), f_01),
+            tf.multiply(self.t * self.t, f_10),
+        )
+        f_t1 = ((1 - self.t) * (1 - self.t) * f_01) - (self.t * (1 - self.t) * f_10)
+        # flow interpolation
+        g_i0_ft0 = BackWarp(self.frame_0, f_t0)
+        g_i1_ft1 = BackWarp(self.frame_1, f_t1)
+        flow_interp_in = tf.concat(
+            [self.frame_0, self.frame_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0],
+            axis=1,
+        )
+
+        flow_interp_out = self.flow_interp_layer(flow_interp_in)
+
+        # optical flow residuals and visibility maps
+        delta_f_t0 = flow_interp_out[:, :2, :, :]
+        delta_f_t1 = flow_interp_out[:, 2:4, :, :]
+
+        v_t0 = tf.keras.activations.sigmoid(flow_interp_out[:, 4:5, :, :])
+        # v_t0 = tf.tile(v_t_0, [1, 1, 1, 3])
+        v_t1 = 1 - v_t0
+
+        f_t0 = tf.add(f_t0, delta_f_t0)
+        f_t1 = tf.add(f_t1, delta_f_t1)
+        return f_01, f_t0, v_t0, f_10, f_t1, v_t1
+
+
+class Output(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(Output).__init__(**kwargs)
+
+    def call(self, inputs, **kwargs):
+        frame_0, f_t0, v_t0, frame_1, f_t1, v_t1 = inputs
+
+        z = tf.add(
+            (tf.multiply(1 - self.t, v_t0), tf.add(tf.multiply(self.t * v_t1), 1e-12))
+        )
+        normalization_factor = tf.divide(1, z)
+
+        frame_pred = tf.multiply(
+            (1 - self.t) * v_t0, BackWarp(frame_0, f_t0)
+        ) + tf.multiply(self.t * v_t1, BackWarp(frame_1, f_t1))
+        frame_pred = tf.multiply(normalization_factor, frame_pred)
+        return frame_pred
+
+
+class WarpingOutput(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(WarpingOutput).__init__(**kwargs)
+
+    def call(self, inputs, **kwargs):
+        frame_0, frame_1, f_01, f_10, f_t0, f_t1 = inputs
+
+        return [
+            BackWarp(frame_1, f_01),
+            BackWarp(frame_0, f_10),
+            BackWarp(frame_0, f_t0),
+            BackWarp(frame_1, f_t1),
+        ]
