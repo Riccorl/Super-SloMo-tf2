@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 from models import losses
 from models.slomo_model import SloMoNet
+import config
 
 
 def prepare_for_training(dataset, batch_size=32, cache=True, shuffle_buffer_size=1000):
@@ -52,7 +53,7 @@ def train():
     print("TensorFlow version: {}".format(tf.version))
     print("Eager execution: {}".format(tf.executing_eagerly()))
 
-    train_dir = Path("../data/extracted/train")
+    train_dir = config.TRAIN_DIR
     train_ds = tf.data.Dataset.list_files(str(train_dir / "*"))
     train_ds = train_ds.map(load_frames, num_parallel_calls=12)
     train_ds = prepare_for_training(train_ds)
@@ -67,6 +68,7 @@ def train():
     for epoch in epochs:
         epoch_loss_avg = tf.keras.metrics.Mean()
         with tf.GradientTape() as tape:
+
             # TODO training, ref:
             # https://github.com/tensorflow/docs/blob/master/site/en/tutorials/customization/custom_training_walkthrough.ipynb
             pass
@@ -77,6 +79,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    t = np.linspace(0.125, 0.875, 12)
-    print(t)
+    main()
+    # t = np.linspace(0.125, 0.875, 12)
+    # print(t)

@@ -36,7 +36,7 @@ def group_frames(input_dir: Path, output_dir: Path, n_frame: int = 12):
                 )
                 for a in accumulator:
                     shutil.move(
-                        str(a), "{}/{}/{}".format(output_dir, folder_counter, a.name),
+                        str(a), "{}/{}/{}".format(output_dir, folder_counter, a.name)
                     )
                 accumulator = []
                 folder_counter += 1

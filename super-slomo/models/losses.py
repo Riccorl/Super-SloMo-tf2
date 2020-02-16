@@ -3,12 +3,37 @@ import tensorflow as tf
 from models.layers import BackWarp
 
 
+def total_loss(y_true, y_pred):
+    pass
+
+
 def reconstruction_loss(y_true, y_pred):
+    y_true = tf.image.convert_image_dtype(y_true, dtype=tf.uint8)
+    y_pred = tf.image.convert_image_dtype(y_pred, dtype=tf.uint8)
+
+    y_true = tf.cast(y_true, dtype=tf.float32)
+    y_pred = tf.cast(y_pred, dtype=tf.float32)
+
     return l1_loss(y_true, y_pred)
 
 
+
+def perceptual_loss(y_true, y_pred):
+
+
+
 def l1_loss(y_true, y_pred):
+    """
+    L1 norm
+    """
     return tf.reduce_mean(tf.reduce_sum(tf.abs(y_pred - y_true)))
+
+
+def l2_loss(y_true, y_pred):
+    """
+    L2 norm
+    """
+    return tf.reduce_mean(tf.reduce_sum(tf.square(y_pred - y_true)))  # L2 Norm
 
 
 def warping_loss(warping_input):
@@ -33,3 +58,7 @@ def _compute_delta(frame):
     return tf.reduce_mean(
         tf.abs(frame[:, 1:, :, :] - frame[:, :-1, :, :])
     ) + tf.reduce_mean(tf.abs(frame[:, :, 1:, :] - frame[:, :, :-1, :]))
+
+
+
+def
