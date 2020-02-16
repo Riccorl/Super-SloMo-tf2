@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import tensorflow_addons as ta
 
 class UNet(tf.keras.Model):
     def __init__(self, out_filters, *args, **kwargs):
@@ -127,13 +127,5 @@ class BackWarp(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         image, flow = inputs
-        # Extract horizontal and vertical flows.
-        u = flow[:, 0, :, :]
-        v = flow[:, 1, :, :]
-        # Broadcast an array for a compatible shape
-        w = tf.add(self.grid_w.expand_dims(0).broadcast_to(u), u)
-        h = tf.add(self.grid_h.expand_dims(0).broadcast_to(v), v)
-        return super().call(inputs, **kwargs)
-
-
-
+        imgOut = ta.image.dense_image_warp(image,flow)
+        return imgOut
