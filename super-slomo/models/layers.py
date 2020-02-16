@@ -120,10 +120,6 @@ class BackWarp(tf.keras.layers.Layer):
     """
     def __init__(self, width, height, **kwargs):
         super(BackWarp).__init__(**kwargs)
-        self.width = width
-        self.height = height
-        self.grid_w = tf.meshgrid(width)
-        self.grid_h = tf.meshgrid(height)
 
     def call(self, inputs, **kwargs):
         image, flow = inputs
