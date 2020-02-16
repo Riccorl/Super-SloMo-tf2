@@ -1,11 +1,11 @@
 import random
-from pathlib import Path
 
-import numpy as np
 import tensorflow as tf
+
 from models import losses
 from models.slomo_model import SloMoNet
 import config
+import os
 
 
 def prepare_for_training(dataset, batch_size=32, cache=True, shuffle_buffer_size=1000):
@@ -17,18 +17,13 @@ def prepare_for_training(dataset, batch_size=32, cache=True, shuffle_buffer_size
             dataset = dataset.cache(cache)
         else:
             dataset = dataset.cache()
-
     dataset = dataset.shuffle(buffer_size=shuffle_buffer_size)
-
     # Repeat forever
     dataset = dataset.repeat()
-
     dataset = dataset.batch(batch_size)
-
     # `prefetch` lets the dataset fetch batches in the background while the model
     # is training.
     dataset = dataset.prefetch(buffer_size=batch_size)
-
     return dataset
 
 
@@ -46,18 +41,23 @@ def decode_img(img):
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     img = tf.image.convert_image_dtype(img, tf.float32)
     # resize the image to the desired size.
-    return tf.image.resize(img, [352, 352])
+    return tf.image.resize(img, [300, 300])
 
 
 def train():
-    print("TensorFlow version: {}".format(tf.version))
+    tf.keras.backend.clear_session()
+    os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
+
+    print("TensorFlow version: {}".format(tf.__version__))
     print("Eager execution: {}".format(tf.executing_eagerly()))
 
     train_dir = config.TRAIN_DIR
     train_ds = tf.data.Dataset.list_files(str(train_dir / "*"))
-    train_ds = train_ds.map(load_frames, num_parallel_calls=12)
-    train_ds = prepare_for_training(train_ds)
-    image_batch = next(iter(train_ds))
+    train_ds = (
+        train_ds.map(load_frames, num_parallel_calls=12)
+        .batch(32)
+        .prefetch(buffer_size=32)
+    )
 
     # Custom training
     model = SloMoNet()
@@ -68,10 +68,28 @@ def train():
     for epoch in epochs:
         epoch_loss_avg = tf.keras.metrics.Mean()
         with tf.GradientTape() as tape:
+            for frames in train_ds:
+                loss_value, grads = grad(model, frames)
+                optimizer.apply_gradients(zip(grads, model.trainable_variables))
+                # Track progress
+                epoch_loss_avg(loss_value)  # Add current batch loss
 
-            # TODO training, ref:
-            # https://github.com/tensorflow/docs/blob/master/site/en/tutorials/customization/custom_training_walkthrough.ipynb
-            pass
+        train_loss_results.append(epoch_loss_avg.result())
+        if epoch % 50 == 0:
+            print("Epoch {:03d}: Loss: {:.3f}".format(epoch, epoch_loss_avg.result()))
+
+
+def grad(model, inputs):
+    with tf.GradientTape() as tape:
+        loss_value = compute_losses(model, inputs, training=True)
+    return loss_value, tape.gradient(loss_value, model.trainable_variables)
+
+
+def compute_losses(model, inputs, training):
+    frame_0, frame_t, frame_1 = inputs
+    predictions, warping_output = model(inputs, training=training)
+    rec_loss = losses.reconstruction_loss(frame_t, predictions)
+    return rec_loss
 
 
 def main():
