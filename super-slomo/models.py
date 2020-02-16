@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow import keras as k
 import tensorflow_addons as tfa
 
-
 def get_model():
     k.backend.clear_session()
 
