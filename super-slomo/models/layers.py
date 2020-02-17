@@ -15,8 +15,8 @@ class UNet(tf.keras.layers.Layer):
         self.conv2 = tf.keras.layers.Conv2D(
             filters=32, kernel_size=7, strides=1, padding="same"
         )
-        self.encoder1 = Encoder(32, 5)
-        self.encoder2 = Encoder(64, 3)
+        self.encoder1 = Encoder(32, 7)
+        self.encoder2 = Encoder(64, 5)
         self.encoder3 = Encoder(128, 3)
         self.encoder4 = Encoder(256, 3)
         self.encoder5 = Encoder(256, 3)
@@ -30,6 +30,7 @@ class UNet(tf.keras.layers.Layer):
         )
 
     def call(self, inputs, **kwargs):
+        print("before", inputs.shape)
         x_enc = self.conv1(inputs)
         x_enc = self.leaky_relu(x_enc)
         skip = self.conv2(x_enc)
@@ -46,6 +47,7 @@ class UNet(tf.keras.layers.Layer):
         x_dec = self.decoder5([x_dec, skip1])
         x_dec = self.conv3(x_dec)
         x_dec = self.leaky_relu(x_dec)
+        print("after", x_dec.shape)
         return x_dec, x_enc
 
 
@@ -148,7 +150,7 @@ class OpticalFlow(tf.keras.layers.Layer):
     def call(self, inputs, **kwargs):
         frame_0, frame_1, flow = inputs
         # flow computation
-        f_01, f_10 = flow[:, :, :, 2:], flow[:, :, :, :2]
+        f_01, f_10 = flow[:, :, :, :2], flow[:, :, :, 2:]
         f_t0 = tf.add(
             tf.multiply((-1 * (1 - self.t) * self.t), f_01),
             tf.multiply(self.t * self.t, f_10),
