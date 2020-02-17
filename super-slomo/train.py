@@ -41,7 +41,7 @@ def decode_img(img):
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     img = tf.image.convert_image_dtype(img, tf.float32)
     # resize the image to the desired size.
-    return tf.image.resize(img, [300, 300])
+    return tf.image.resize(img, [352, 352])
 
 
 def train():
@@ -55,8 +55,8 @@ def train():
     train_ds = tf.data.Dataset.list_files(str(train_dir / "*"))
     train_ds = (
         train_ds.map(load_frames, num_parallel_calls=12)
-        .batch(32)
-        .prefetch(buffer_size=32)
+        .batch(6)
+        .prefetch(buffer_size=6)
     )
 
     # Custom training
