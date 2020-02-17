@@ -15,7 +15,7 @@ class SloMoNet(tf.keras.Model):
     def call(self, inputs, training=False, **kwargs):
         frame_0, frame_t, frame_1 = inputs
         flow_input = tf.concat([frame_0, frame_1], axis=3)
-        flow_out, flow_enc = self.flow_comp_layer(flow_input)
+        flow_out = self.flow_comp_layer(flow_input)
         optical_input = [frame_0, frame_1, flow_out]
         f_01, f_t0, v_t0, f_10, f_t1, v_t1 = self.optical_flow(optical_input)
         predictions_input = [frame_0, f_t0, v_t0, frame_1, f_t1, v_t1]

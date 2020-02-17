@@ -46,7 +46,7 @@ class UNet(tf.keras.layers.Layer):
         x_dec = self.decoder5([x_dec, skip1])
         x_dec = self.conv3(x_dec)
         x_dec = self.leaky_relu(x_dec)
-        return x_dec, x_enc
+        return x_dec
 
 
 class Encoder(tf.keras.layers.Layer):
@@ -178,9 +178,10 @@ class OpticalFlow(tf.keras.layers.Layer):
 
 
 class Output(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
+    def __init__(self, t=0.5, **kwargs):
         super(Output, self).__init__(**kwargs)
-
+        self.t = t
+    
     def build(self, input_shape):
         self.backwarp_layer_t0 = BackWarp()
         self.backwarp_layer_t1 = BackWarp()
@@ -188,9 +189,7 @@ class Output(tf.keras.layers.Layer):
     def call(self, inputs, **kwargs):
         frame_0, f_t0, v_t0, frame_1, f_t1, v_t1 = inputs
 
-        z = tf.add(
-            (tf.multiply(1 - self.t, v_t0), tf.add(tf.multiply(self.t * v_t1), 1e-12))
-        )
+        z = tf.add(tf.multiply(1 - self.t, v_t0), tf.add(tf.multiply(self.t, v_t1), 1e-12))
         normalization_factor = tf.divide(1, z)
 
         frame_pred = tf.multiply(
