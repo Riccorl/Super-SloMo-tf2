@@ -30,7 +30,6 @@ class UNet(tf.keras.layers.Layer):
         )
 
     def call(self, inputs, **kwargs):
-        print("before", inputs.shape)
         x_enc = self.conv1(inputs)
         x_enc = self.leaky_relu(x_enc)
         skip = self.conv2(x_enc)
@@ -47,7 +46,6 @@ class UNet(tf.keras.layers.Layer):
         x_dec = self.decoder5([x_dec, skip1])
         x_dec = self.conv3(x_dec)
         x_dec = self.leaky_relu(x_dec)
-        print("after", x_dec.shape)
         return x_dec, x_enc
 
 
@@ -161,7 +159,7 @@ class OpticalFlow(tf.keras.layers.Layer):
         g_i1_ft1 = self.backwarp_layer_t1([frame_1, f_t1])
         flow_interp_in = tf.concat(
             [frame_0, frame_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0],
-            axis=1,
+            axis=3,
         )
 
         flow_interp_out = self.flow_interp_layer(flow_interp_in)
