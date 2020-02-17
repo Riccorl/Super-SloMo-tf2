@@ -1,8 +1,15 @@
 import tensorflow as tf
 
+import config
 
-def total_loss(y_true, y_pred):
-    pass
+
+def total_loss(y_true, y_pred, warping_input, f_01, f_10):
+    return (
+        config.REC_LOSS * reconstruction_loss(y_true, y_pred)
+        + config.PERCEP_LOSS * perceptual_loss(y_true, y_pred)
+        + config.WRAP_LOSS * warping_loss(warping_input)
+        + config.SMOOTH_LOSS * smoothness_loss(f_01, f_10)
+    )
 
 
 @tf.function
@@ -16,7 +23,10 @@ def reconstruction_loss(y_true, y_pred):
     return l1_loss(y_true, y_pred)
 
 
-# def perceptual_loss(y_true, y_pred):
+def perceptual_loss(y_true, y_pred):
+    y_true = tf.keras.applications.VGG16(y_true)
+    y_pred = tf.keras.applications.VGG16(y_pred)
+    return l2_loss(y_true, y_pred)
 
 
 def l1_loss(y_true, y_pred):
