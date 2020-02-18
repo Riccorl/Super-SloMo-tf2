@@ -1,8 +1,9 @@
 from pathlib import Path
 
-TRAIN_DIR = (
-    Path(__file__).resolve().parent.parent / "data/preprocessed/train"
-)
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "preprocessed"
+TRAIN_DIR = DATA_DIR / "train"
+TEST_DIR = DATA_DIR / "test"
+VALID_DIR = DATA_DIR / "val"
 LOG_DIR = Path(__file__).resolve().parent.parent / "log"
 
 REC_LOSS = 0.1
