@@ -218,18 +218,3 @@ class WarpingOutput(tf.keras.layers.Layer):
             self.backwarp_layer3([frame_0, f_t0]),
             self.backwarp_layer4([frame_1, f_t1]),
         ]
-
-
-#
-#
-# class VGG_19(tf.keras.Model):
-#     def __init__(self, **kwargs):
-#         super(VGG_19).__init__(**kwargs)
-#         self.scope = "vgg_19"
-#         self.reuse = False
-#
-#     def call(self, input, **kwargs):
-#         sc = tf.Variable(self.scope, self.scope, [input], reuse=self.reuse)
-#         epc = sc.name + "_end_points"
-#
-#         tf.keras.layers.Conv2D

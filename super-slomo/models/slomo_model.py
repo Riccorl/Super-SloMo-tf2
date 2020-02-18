@@ -22,4 +22,5 @@ class SloMoNet(tf.keras.Model):
         predictions = self.output_layer(predictions_input)
         warping_input = [frame_0, frame_1, f_01, f_10, f_t0, f_t1]
         warping_output = self.warping_layer(warping_input)
-        return predictions, warping_output
+        losses_output = [f_01, f_10, f_t0, f_t1] + warping_output
+        return predictions, losses_output
