@@ -12,14 +12,14 @@ def total_loss(y_true, y_pred, warping_input, f_01, f_10):
     )
 
 
-@tf.function
 def reconstruction_loss(y_true, y_pred):
+    '''
     y_true = tf.image.convert_image_dtype(y_true, dtype=tf.uint8)
     y_pred = tf.image.convert_image_dtype(y_pred, dtype=tf.uint8)
 
     y_true = tf.cast(y_true, dtype=tf.float32)
     y_pred = tf.cast(y_pred, dtype=tf.float32)
-
+    '''
     return l1_loss(y_true, y_pred)
 
 
@@ -33,7 +33,7 @@ def l1_loss(y_true, y_pred):
     """
     L1 norm
     """
-    return tf.reduce_mean(tf.reduce_sum(tf.abs(y_pred - y_true)))
+    return tf.reduce_mean(tf.reduce_sum(tf.abs(tf.subtract(y_pred,y_true))))
 
 
 def l2_loss(y_true, y_pred):

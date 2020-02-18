@@ -41,7 +41,7 @@ def decode_img(img):
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     img = tf.image.convert_image_dtype(img, tf.float32)
     # resize the image to the desired size.
-    return tf.image.resize(img, [352, 352])
+    return tf.image.resize(img, [256, 256])
 
 
 def train():
@@ -66,13 +66,13 @@ def train():
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     epochs = range(10)
     for epoch in epochs:
+        print("Epoch: " + str(epoch))
         epoch_loss_avg = tf.keras.metrics.Mean()
-        with tf.GradientTape() as tape:
-            for frames in train_ds:
-                loss_value, grads = grad(model, frames)
-                optimizer.apply_gradients(zip(grads, model.trainable_variables))
-                # Track progress
-                epoch_loss_avg(loss_value)  # Add current batch loss
+        for frames in train_ds:
+            loss_value, grads = grad(model, frames)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+            # Track progress
+            epoch_loss_avg(loss_value)  # Add current batch loss
 
         train_loss_results.append(epoch_loss_avg.result())
         if epoch % 50 == 0:
@@ -82,7 +82,7 @@ def train():
 def grad(model, inputs):
     with tf.GradientTape() as tape:
         loss_value = compute_losses(model, inputs, training=True)
-    return loss_value, tape.gradient(loss_value, model.trainable_variables)
+    return loss_value,tape.gradient(loss_value, model.trainable_variables)
 
 
 def compute_losses(model, inputs, training):
