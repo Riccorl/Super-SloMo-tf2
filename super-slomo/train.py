@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import os
 import pathlib
@@ -89,9 +90,13 @@ def decode_img(image: str):
     return image
 
 
-def train(log_dir: pathlib.Path, epochs: int, batch_size: int):
+def train(
+    data_dir: str, model_dir: str, log_dir: pathlib.Path, epochs: int, batch_size: int
+):
     """
     Train funtion
+    :param data_dir: dataset directory
+    :param model_dir: directory where to save the mdoels
     :param log_dir: directory where to store logs for Tensorboard
     :param epochs: number of epochs
     :param batch_size: size of the batch
@@ -104,12 +109,16 @@ def train(log_dir: pathlib.Path, epochs: int, batch_size: int):
     print("TensorFlow version: {}".format(tf.__version__))
     print("Eager execution: {}".format(tf.executing_eagerly()))
 
-    train_ds = load_dataset(config.TRAIN_DIR, batch_size)
+    data_dir = pathlib.Path(data_dir)
+    train_ds = load_dataset(data_dir / "train", batch_size)
     len_train = tf.data.experimental.cardinality(train_ds).numpy()
     progbar = tf.keras.utils.Progbar(len_train)
-    valid_ds = load_dataset(config.VALID_DIR, batch_size, train=False)
+    valid_ds = load_dataset(data_dir / "val", batch_size, train=False)
     len_valid = tf.data.experimental.cardinality(valid_ds).numpy()
     val_progbar = tf.keras.utils.Progbar(len_valid)
+
+    model_dir = pathlib.Path(model_dir)
+    model_dir.mkdir(parents=True, exist_ok=True)
 
     # Custom training
     model = SloMoNet(batch_size)
@@ -146,6 +155,11 @@ def train(log_dir: pathlib.Path, epochs: int, batch_size: int):
                     ("val_ssim", val_metric_values[1]),
                 ],
             )
+        chckpnt_file = model_dir / "chckpnt_{}.model".format(epoch)
+        model.save_weights(str(chckpnt_file))
+
+    final_file = model_dir / "final_{}.model".format(epochs)
+    model.save_weights(str(final_file))
 
 
 @tf.function
@@ -224,6 +238,19 @@ def compute_metrics(frames_t, predictions):
     return psnr, ssim
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(help="path to dataset folder", dest="data_dir")
+    parser.add_argument(help="path where to save model", dest="model_dir")
+    parser.add_argument(
+        "--epochs", help="number of epochs", dest="epochs", default=40, type=int
+    )
+    parser.add_argument(
+        "--batch-size", help="size of the batch", dest="batch", default=32, type=int
+    )
+    return parser.parse_args()
+
+
 def main():
     log_dir = config.LOG_DIR
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -231,10 +258,8 @@ def main():
     train_log_dir = log_dir / current_time / "train"
     train_log_dir.mkdir(parents=True, exist_ok=True)
 
-    epochs = 10
-    batch_size = 6
-
-    train(train_log_dir, epochs, batch_size)
+    args = parse_args()
+    train(args.data_dir, args.model_dir, train_log_dir, args.epochs, args.batch_size)
 
 
 if __name__ == "__main__":
