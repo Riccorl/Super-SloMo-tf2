@@ -3,18 +3,18 @@ import os
 import pathlib
 import random
 
-import numpy
 import tensorflow as tf
 
 import config
 from models import losses, metrics
 from models.slomo_model import SloMoNet
 
+import numpy as np
 
 def load_dataset(
     data_dir: pathlib.Path,
     batch_size: int = 32,
-    cache: bool = True,
+    cache: bool = False,
     train: bool = True,
 ):
     """
@@ -29,7 +29,7 @@ def load_dataset(
     dataset = tf.data.Dataset.list_files(str(data_dir / "*"))
     dataset = dataset.map(load_frames, num_parallel_calls=autotune)
     # use `.cache(filename)` to cache preprocessing work for datasets that don't
-    # fit in memory.
+    # fit in memory. It cause memory leak, check with more memory.
     if cache:
         if isinstance(cache, str):
             dataset = dataset.cache(cache)
@@ -37,9 +37,12 @@ def load_dataset(
             dataset = dataset.cache()
     if train:
         dataset = dataset.map(data_augment, num_parallel_calls=autotune)
-        dataset = dataset.shuffle(buffer_size=128)
+        dataset = dataset.shuffle(buffer_size=3000)
     # `prefetch` lets the dataset fetch batches in the background while the model is training.
-    dataset = dataset.repeat().batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
+    dataset = (
+        dataset.batch(batch_size, drop_remainder=True)
+        .prefetch(tf.data.experimental.AUTOTUNE)
+    )
     return dataset
 
 
@@ -101,25 +104,25 @@ def train(log_dir: pathlib.Path, epochs: int, batch_size: int):
     """
     tf.keras.backend.clear_session()
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
+    np.random.seed(121)
 
     print("TensorFlow version: {}".format(tf.__version__))
     print("Eager execution: {}".format(tf.executing_eagerly()))
 
     train_ds = load_dataset(config.TRAIN_DIR, batch_size)
-    len_train = len([f.name for f in os.scandir(config.TRAIN_DIR) if f.is_dir()])
-    progbar = tf.keras.utils.Progbar(len_train // batch_size)
+    len_train = tf.data.experimental.cardinality(train_ds).numpy()
+    progbar = tf.keras.utils.Progbar(len_train)
     valid_ds = load_dataset(config.VALID_DIR, batch_size, train=False)
-    val_progbar = tf.keras.utils.Progbar(100 // batch_size)
+    len_valid = tf.data.experimental.cardinality(valid_ds).numpy()
+    val_progbar = tf.keras.utils.Progbar(len_valid)
 
     # Custom training
     model = SloMoNet(batch_size)
     vgg16 = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
-
-    # Keep results for plotting
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+
     for epoch in range(epochs):
         print("Epoch: " + str(epoch))
-        # losses_avg = [tf.keras.metrics.Mean()] * 5
         for step, frames in enumerate(train_ds):
             loss_values, metric_values = train_step(model, frames, optimizer, vgg16)
             progbar.update(
@@ -144,8 +147,8 @@ def train(log_dir: pathlib.Path, epochs: int, batch_size: int):
                     ("perc_loss", val_loss_values[2]),
                     ("smooth_loss", val_loss_values[3]),
                     ("warping_loss", val_loss_values[4]),
-                    ("psnr", val_metric_values[0]),
-                    ("ssim", val_metric_values[1]),
+                    ("val_psnr", val_metric_values[0]),
+                    ("val_ssim", val_metric_values[1]),
                 ],
             )
 
