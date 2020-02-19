@@ -1,8 +1,8 @@
 import argparse
 import os
+import random
 import shutil
 from pathlib import Path
-import random
 
 
 def extract_frames(input_dir: Path, output_dir: Path, img_width: str, img_height: str):

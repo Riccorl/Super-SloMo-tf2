@@ -3,13 +3,13 @@ import os
 import pathlib
 import random
 
+import numpy as np
 import tensorflow as tf
 
 import config
 from models import losses, metrics
 from models.slomo_model import SloMoNet
 
-import numpy as np
 
 def load_dataset(
     data_dir: pathlib.Path,
@@ -39,9 +39,8 @@ def load_dataset(
         dataset = dataset.map(data_augment, num_parallel_calls=autotune)
         dataset = dataset.shuffle(buffer_size=3000)
     # `prefetch` lets the dataset fetch batches in the background while the model is training.
-    dataset = (
-        dataset.batch(batch_size, drop_remainder=True)
-        .prefetch(tf.data.experimental.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(
+        tf.data.experimental.AUTOTUNE
     )
     return dataset
 

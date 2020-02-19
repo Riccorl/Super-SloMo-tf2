@@ -1,6 +1,5 @@
 import tensorflow as tf
 import tensorflow_addons as ta
-import numpy as np
 
 
 class UNet(tf.keras.layers.Layer):
