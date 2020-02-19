@@ -54,14 +54,10 @@ def data_augment(frame_0, frame_t, frame_1, frame_t_index):
     :param frame_t_index: index of frame_t
     :return: the frames augmented
     """
-    w, h = 256, 256
-    # frame_0, frame_t, frame_1 = frames
+    w, h = 352, 352
     frame_0 = tf.image.resize(frame_0, [w, h])
     frame_t = tf.image.resize(frame_t, [w, h])
     frame_1 = tf.image.resize(frame_1, [w, h])
-    # for frame in frames:
-    #     tf.image.resize(frame, [w, h])
-    # print(frames)
     return frame_0, frame_t, frame_1, frame_t_index
 
 

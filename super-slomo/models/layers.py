@@ -78,11 +78,11 @@ class Encoder(tf.keras.layers.Layer):
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=0.1)
 
     def call(self, inputs, **kwargs):
-        x = self.avg_pool(inputs)
-        x = self.conv1(x)
+        x = self.conv1(inputs)
         x = self.leaky_relu(x)
         x = self.conv2(x)
         x = self.leaky_relu(x)
+        x = self.avg_pool(x)
         return x
 
 
@@ -111,10 +111,14 @@ class Decoder(tf.keras.layers.Layer):
         x = self.interpolation(x)
         x = self.conv1(x)
         x = self.leaky_relu(x)
-        cat = tf.keras.layers.Concatenate(axis=3)([x, skip])
-        cat = self.conv2(cat)
-        cat = self.leaky_relu(cat)
-        return cat
+        # pad smaller matrix
+        x_delta = skip.shape[1] - x.shape[1]
+        y_delta = skip.shape[2] - x.shape[2]
+        x = tf.pad(x, tf.convert_to_tensor([[0, 0], [0, x_delta], [0, y_delta], [0, 0]]))
+        x = tf.keras.layers.Concatenate(axis=3)([x, skip])
+        x = self.conv2(x)
+        x = self.leaky_relu(x)
+        return x
 
 
 class BackWarp(tf.keras.layers.Layer):
