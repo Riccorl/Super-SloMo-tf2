@@ -15,6 +15,7 @@ from models.slomo_model import SloMoNet
 def load_dataset(
     data_dir: pathlib.Path,
     batch_size: int = 32,
+    buffer_size: int = 1000,
     cache: bool = False,
     train: bool = True,
 ):
@@ -22,6 +23,8 @@ def load_dataset(
     Prepare the tf.data.Dataset for training
     :param data_dir: directory of the dataset
     :param batch_size: size of the batch
+    :param buffer_size: the number of elements from this
+        dataset from which the new dataset will sample.
     :param cache: if True, cache the dataset
     :param train: if True, agument and shuffle the dataset
     :return: the dataset in input
@@ -38,7 +41,7 @@ def load_dataset(
             dataset = dataset.cache()
     if train:
         dataset = dataset.map(data_augment, num_parallel_calls=autotune)
-        dataset = dataset.shuffle(buffer_size=3000)
+        dataset = dataset.shuffle(buffer_size=buffer_size)
     # `prefetch` lets the dataset fetch batches in the background while the model is training.
     dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(
         tf.data.experimental.AUTOTUNE
@@ -124,6 +127,8 @@ def train(
     model = SloMoNet(batch_size)
     vgg16 = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+    ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
+    manager = tf.train.CheckpointManager(ckpt, str(model_dir), max_to_keep=3)
 
     for epoch in range(epochs):
         print("Epoch: " + str(epoch))
@@ -155,8 +160,11 @@ def train(
                     ("val_ssim", val_metric_values[1]),
                 ],
             )
-        chckpnt_file = model_dir / "chckpnt_{}.model".format(epoch)
-        model.save_weights(str(chckpnt_file))
+        ckpt.step.assign_add(1)
+        save_path = manager.save()
+        print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
+        # chckpnt_file = model_dir / "chckpnt_{}.model".format(epoch)
+        # model.save_weights(str(chckpnt_file))
 
     final_file = model_dir / "final_{}.model".format(epochs)
     model.save_weights(str(final_file))
