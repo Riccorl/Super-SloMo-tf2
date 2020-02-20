@@ -35,7 +35,7 @@ def load_dataset(
         ds = ds.map(data_augment, num_parallel_calls=autotune)
         ds = ds.shuffle(buffer_size=buffer_size)
     # else:
-        # ds = ds.map(lambda *x: ((x[0], x[2], x[3]), x[1]))
+    # ds = ds.map(lambda *x: ((x[0], x[2], x[3]), x[1]))
     # `prefetch` lets the dataset fetch batches in the background while the model is training.
     ds = ds.batch(batch_size, drop_remainder=True).prefetch(autotune)
     return ds
@@ -51,8 +51,12 @@ def data_augment(frames, frame_t):
     :return: the frames augmented
     """
     w, h = 352, 352
-    resized = tuple([tf.image.resize(f, [w, h]) for f in frames[:2]] + [frames[2]])
-    frame_t = tf.image.resize(frame_t, [w, h])
+    resized = tuple(
+        [tf.image.resize(f, [w, h], preserve_aspect_ratio=True) for f in frames[:2]]
+        + [frames[2]]
+    )
+    # frame_t = tf.image.resize(frame_t, [w, h])
+    frame_t = tf.image.resize(frame_t, [w, h], preserve_aspect_ratio=True)
     return resized, frame_t
 
 

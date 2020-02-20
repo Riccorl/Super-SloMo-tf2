@@ -108,9 +108,9 @@ def predict(
     for step, frames in enumerate(ds):
         predictions, _ = model(frames, training=False)
         videos += (
-            [deprocess(frames[0][0])]
-            + [deprocess(f) for f in predictions]
-            + [deprocess(frames[0][1])]
+            # [deprocess(frames[0][0])]
+             [deprocess(f) for f in predictions]
+            # + [deprocess(frames[0][1])]
         )
         progbar.update(step + 1)
 
@@ -142,12 +142,10 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # video_path = pathlib.Path("../videos/pit_stop_short,mp4")
-    # output_path = pathlib.Path("../videos/slomo.mp4")
-    # model_path = pathlib.Path("../models/run1/chckpnt")
-    predict(
-        args.video_path, args.model_path, args.output_path, args.fps, args.slomo_factor
-    )
+    video_path = pathlib.Path(args.video_path)
+    output_path = pathlib.Path(args.output_path)
+    model_path = pathlib.Path(args.model_path)
+    predict(video_path, model_path, output_path, args.fps, args.slomo_factor)
 
 
 if __name__ == "__main__":
