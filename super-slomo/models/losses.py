@@ -1,5 +1,7 @@
 import tensorflow as tf
 
+import config
+
 
 @tf.function
 def reconstruction_loss(y_true, y_pred):
@@ -90,3 +92,32 @@ def l2_loss(y_true, y_pred):
     :return: the l2 norm between y_true and y_pred
     """
     return tf.reduce_mean(tf.reduce_sum(tf.square(y_pred - y_true)))
+
+
+@tf.function
+def compute_losses(predictions, loss_values, inputs, frames_t, vgg16):
+    """
+    Compute the losses (reconstruction loss, perceptual loss, smoothness loss, warping loss
+    and a comination of all the losses.
+    :param predictions: the predictions of the models
+    :param loss_values: loss values from the GradientTape
+    :param inputs: frames in input
+    :param frames_t: target frames
+    :param vgg16: vgg16 pretrained for perceptual loss
+    :return: the losses
+    """
+    frames_0, frames_1, _ = inputs
+    # unpack loss variables
+    f_01, f_10, f_t0, f_t1 = loss_values[:4]
+    backwarp_frames = loss_values[4:]
+    rec_loss = reconstruction_loss(frames_t, predictions)
+    perc_loss = perceptual_loss(vgg16, frames_t, predictions)
+    smooth_loss = smoothness_loss(f_01, f_10)
+    warp_loss = warping_loss(frames_0, frames_t, frames_1, backwarp_frames)
+    total_loss = (
+        config.REC_LOSS * rec_loss
+        + config.PERCEP_LOSS * perc_loss
+        + config.WRAP_LOSS * warp_loss
+        + config.SMOOTH_LOSS * smooth_loss
+    )
+    return total_loss, rec_loss, perc_loss, smooth_loss, warp_loss
