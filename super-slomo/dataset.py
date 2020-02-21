@@ -80,10 +80,11 @@ def load_frames(folder_path: str):
     return (frame_0, frame_1, sampled_indeces[1]), frame_t
 
 
-def decode_img(image: str):
+def decode_img(image: str, train: bool = True):
     """
     Decode the image from its filename
     :param image: the image to decode
+    :param train: if train, apply normalization
     :return: the image decoded
     """
     image = tf.io.read_file(image)
@@ -91,6 +92,8 @@ def decode_img(image: str):
     image = tf.image.decode_jpeg(image, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     image = tf.image.convert_image_dtype(image, tf.float32)
-    # normalize image
-    image = (image / 127.5) - 1
+    if train:
+        # normalize image
+        image = (image / 127.5) - 1
+        # image = tf.image.per_image_standardization(image)
     return image
