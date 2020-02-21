@@ -88,7 +88,7 @@ def train(
             )
         ckpt.step.assign_add(1)
         save_path = manager.save()
-        model.save_weights(str(model_dir / "weights_{}.tf".format(epoch)), save_format="tf")
+        # model.save_weights(str(model_dir / "weights_{}.tf".format(epoch)), save_format="tf")
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
 
     final_file = model_dir / "weights_final_{}.tf".format(epochs)

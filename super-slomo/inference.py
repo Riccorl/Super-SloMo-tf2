@@ -29,6 +29,7 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     success, image = vidcap.read()
     count = 0
     while success:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         cv2.imwrite(
             "{}/frame%04d.jpg".format(output_filename) % count, image
         )  # save frame as JPEG file
@@ -118,7 +119,7 @@ def predict(
         out_video.write(f)
 
     out_video.release()
-    shutil.rmtree(data_path)
+    # shutil.rmtree(data_path)
 
 
 def parse_args():
@@ -152,3 +153,4 @@ if __name__ == "__main__":
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
     # os.environ["OMP_NUM_THREADS"] = "12"
     main()
+
