@@ -19,11 +19,11 @@ class UNet(tf.keras.layers.Layer):
         self.encoder2 = Encoder(64, 5)
         self.encoder3 = Encoder(128, 3)
         self.encoder4 = Encoder(256, 3)
-        self.encoder5 = Encoder(256, 3)
-        self.decoder1 = Decoder(256)
-        self.decoder2 = Decoder(128)
-        self.decoder3 = Decoder(64)
-        self.decoder4 = Decoder(32)
+        self.encoder5 = Encoder(512, 3)
+        self.decoder1 = Decoder(512)
+        self.decoder2 = Decoder(256)
+        self.decoder3 = Decoder(128)
+        self.decoder4 = Decoder(64)
         self.decoder5 = Decoder(32)
         self.conv3 = tf.keras.layers.Conv2D(
             filters=self.out_filters, kernel_size=3, strides=1, padding="same"
@@ -114,7 +114,9 @@ class Decoder(tf.keras.layers.Layer):
         # pad smaller matrix
         x_delta = skip.shape[1] - x.shape[1]
         y_delta = skip.shape[2] - x.shape[2]
-        x = tf.pad(x, tf.convert_to_tensor([[0, 0], [0, x_delta], [0, y_delta], [0, 0]]))
+        x = tf.pad(
+            x, tf.convert_to_tensor([[0, 0], [0, x_delta], [0, y_delta], [0, 0]])
+        )
         x = tf.keras.layers.Concatenate(axis=3)([x, skip])
         x = self.conv2(x)
         x = self.leaky_relu(x)
@@ -150,12 +152,8 @@ class OpticalFlow(tf.keras.layers.Layer):
         self.backwarp_layer_t1 = BackWarp()
 
     def call(self, inputs, **kwargs):
-        frames_0, frames_1, flow, frames_indeces = inputs
+        frames_0, frames_1, flow, t_indeces = inputs
 
-        # extract frame t coefficient
-        t_indeces = tf.gather(self.t, frames_indeces)
-        t_indeces = tf.cast(t_indeces, dtype=tf.float32)
-        t_indeces = t_indeces[:, tf.newaxis, tf.newaxis, tf.newaxis]
         # flow computation
         f_01, f_10 = flow[:, :, :, :2], flow[:, :, :, 2:]
 
@@ -171,7 +169,9 @@ class OpticalFlow(tf.keras.layers.Layer):
         g_i0_ft0 = self.backwarp_layer_t0([frames_0, f_t0])
         g_i1_ft1 = self.backwarp_layer_t1([frames_1, f_t1])
         flow_interp_in = tf.concat(
-            [frames_0, frames_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0], axis=3,
+            [frames_0, frames_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0],
+            axis=3,
+            # [frames_0, frames_1, g_i1_ft1, g_i0_ft0, f_t0, f_t1], axis=3,
         )
 
         flow_interp_out = self.flow_interp_layer(flow_interp_in)
@@ -198,20 +198,15 @@ class Output(tf.keras.layers.Layer):
         self.backwarp_layer_t1 = BackWarp()
 
     def call(self, inputs, **kwargs):
-        frame_0, f_t0, v_t0, frame_1, f_t1, v_t1, frames_indeces = inputs
-
-        # extract frame t coefficient
-        t_indeces = tf.gather(self.t, frames_indeces)
-        t_indeces = tf.cast(t_indeces, dtype=tf.float32)
-        t_indeces = t_indeces[:, tf.newaxis, tf.newaxis, tf.newaxis]
+        frame_0, f_t0, v_t0, frame_1, f_t1, v_t1, t_indeces = inputs
 
         z = ((1 - t_indeces) * v_t0) + ((t_indeces * v_t1) + 1e-12)
         normalization_factor = tf.divide(1, z)
 
-        frame_pred = tf.multiply(
-            (1 - t_indeces) * v_t0, self.backwarp_layer_t0([frame_0, f_t0])
+        frame_pred = (
+            (1 - t_indeces) * v_t0 * self.backwarp_layer_t0([frame_0, f_t0])
         ) + ((t_indeces * v_t1) * self.backwarp_layer_t1([frame_1, f_t1]))
-        frame_pred = tf.multiply(normalization_factor, frame_pred)
+        frame_pred = normalization_factor * frame_pred
         return frame_pred
 
 

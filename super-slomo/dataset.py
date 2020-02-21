@@ -52,11 +52,10 @@ def data_augment(frames, frame_t):
     """
     w, h = 352, 352
     resized = tuple(
-        [tf.image.resize(f, [w, h], preserve_aspect_ratio=True) for f in frames[:2]]
+        [tf.image.resize(f, [w, h]) for f in frames[:2]]
         + [frames[2]]
     )
-    # frame_t = tf.image.resize(frame_t, [w, h])
-    frame_t = tf.image.resize(frame_t, [w, h], preserve_aspect_ratio=True)
+    frame_t = tf.image.resize(frame_t, [w, h])
     return resized, frame_t
 
 
