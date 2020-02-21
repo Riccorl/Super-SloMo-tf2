@@ -15,10 +15,10 @@ class UNet(tf.keras.layers.Layer):
         self.conv2 = tf.keras.layers.Conv2D(
             filters=32, kernel_size=7, strides=1, padding="same"
         )
-        self.encoder1 = Encoder(32, 7)
-        self.encoder2 = Encoder(64, 5)
-        self.encoder3 = Encoder(128, 3)
-        self.encoder4 = Encoder(256, 3)
+        self.encoder1 = Encoder(64, 5)
+        self.encoder2 = Encoder(128, 5)
+        self.encoder3 = Encoder(256, 3)
+        self.encoder4 = Encoder(512, 3)
         self.encoder5 = Encoder(512, 3)
         self.decoder1 = Decoder(512)
         self.decoder2 = Decoder(256)
@@ -78,11 +78,11 @@ class Encoder(tf.keras.layers.Layer):
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=0.1)
 
     def call(self, inputs, **kwargs):
-        x = self.conv1(inputs)
+        x = self.avg_pool(inputs)
+        x = self.conv1(x)
         x = self.leaky_relu(x)
         x = self.conv2(x)
         x = self.leaky_relu(x)
-        x = self.avg_pool(x)
         return x
 
 
@@ -171,7 +171,8 @@ class OpticalFlow(tf.keras.layers.Layer):
         flow_interp_in = tf.concat(
             [frames_0, frames_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0],
             axis=3,
-            # [frames_0, frames_1, g_i1_ft1, g_i0_ft0, f_t0, f_t1], axis=3,
+            # [frames_0, frames_1, g_i1_ft1, g_i0_ft0, f_t0, f_t1],
+            # axis=3,
         )
 
         flow_interp_out = self.flow_interp_layer(flow_interp_in)
@@ -180,11 +181,14 @@ class OpticalFlow(tf.keras.layers.Layer):
         delta_f_t0 = flow_interp_out[:, :, :, :2]
         delta_f_t1 = flow_interp_out[:, :, :, 2:4]
 
+        # visibility map
         v_t0 = tf.keras.activations.sigmoid(flow_interp_out[:, :, :, 4:5])
+        v_t0 = tf.tile(v_t0, [1, 1, 1, 3])
         v_t1 = 1 - v_t0
 
         f_t0 = f_t0 + delta_f_t0
         f_t1 = f_t1 + delta_f_t1
+
         return f_01, f_t0, v_t0, f_10, f_t1, v_t1
 
 
@@ -198,14 +202,18 @@ class Output(tf.keras.layers.Layer):
         self.backwarp_layer_t1 = BackWarp()
 
     def call(self, inputs, **kwargs):
-        frame_0, f_t0, v_t0, frame_1, f_t1, v_t1, t_indeces = inputs
+        frames_0, f_t0, v_t0, frames_1, f_t1, v_t1, t_indeces = inputs
+
+        # flow interpolation
+        g_i0_ft0 = self.backwarp_layer_t0([frames_0, f_t0])
+        g_i1_ft1 = self.backwarp_layer_t1([frames_1, f_t1])
 
         z = ((1 - t_indeces) * v_t0) + ((t_indeces * v_t1) + 1e-12)
         normalization_factor = tf.divide(1, z)
 
-        frame_pred = (
-            (1 - t_indeces) * v_t0 * self.backwarp_layer_t0([frame_0, f_t0])
-        ) + ((t_indeces * v_t1) * self.backwarp_layer_t1([frame_1, f_t1]))
+        frame_pred = ((1 - t_indeces) * v_t0 * g_i0_ft0) + (
+            (t_indeces * v_t1) * g_i1_ft1
+        )
         frame_pred = normalization_factor * frame_pred
         return frame_pred
 
