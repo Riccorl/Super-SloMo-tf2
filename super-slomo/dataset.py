@@ -40,7 +40,7 @@ def load_dataset(
     return ds
 
 
-def data_augment(frames, frame_t):
+def data_augment(frames, frames_t):
     """
     Augment the images in the dataset
     :param frames: frames
@@ -49,8 +49,10 @@ def data_augment(frames, frame_t):
     """
     w, h = 352, 352
     resized = tuple([tf.image.resize(f, [w, h]) for f in frames[:2]] + [frames[2]])
-    frame_t = tf.image.resize(frame_t, [w, h])
-    return resized, frame_t
+    # frames_t = [tf.image.resize(frame_t, [w, h]) for frame_t in frames_t]
+    frames_t = tf.map_fn(lambda x: tf.image.resize(x, [w, h]), frames_t, dtype=tf.float32)
+
+    return resized, frames_t
 
 
 def load_frames(folder_path: str):
@@ -63,13 +65,14 @@ def load_frames(folder_path: str):
     sampled_indeces = tf.random.uniform([10], maxval=12, dtype=tf.int32)
     sampled_indeces = tf.sort(sampled_indeces)
     sampled_files = tf.gather(files, sampled_indeces)
-    # frames = []
-    # for file in sampled_files:
-    #     frames.append(decode_img(file))
+
     frame_0 = decode_img(sampled_files[0])
-    frame_1 = decode_img(sampled_files[2])
-    frame_t = decode_img(sampled_files[1])
-    return (frame_0, frame_1, sampled_indeces[1]), frame_t
+    frame_1 = decode_img(sampled_files[-1])
+    # frame_t = decode_img(sampled_files[1])
+    frames_t = tf.map_fn(lambda x: decode_img(x), sampled_files[1:-1], dtype=tf.float32)
+    # for file in sampled_files[1:-1]:
+    #     frames_t.append(decode_img(file))
+    return (frame_0, frame_1, sampled_indeces[1:-1]), frames_t
 
 
 def decode_img(image: str):

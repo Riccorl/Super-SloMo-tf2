@@ -7,7 +7,7 @@ from models import layers
 class SloMoNet(tf.keras.Model):
     def __init__(self, n_frames=12, name="SloMoNet", **kwargs):
         super(SloMoNet, self).__init__(name=name, **kwargs)
-        self.t_slices = tf.constant(np.linspace(0, 1, n_frames))
+        self.t_slices = tf.tile(tf.constant(np.linspace(0, 1, n_frames)), [10])
         self.flow_comp_layer = layers.UNet(4, name="flow_comp")
         self.optical_flow = layers.OpticalFlow(t=self.t_slices, name="optical_flow")
         self.output_layer = layers.Output(t=self.t_slices, name="predictions")
