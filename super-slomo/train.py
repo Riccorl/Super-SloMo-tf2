@@ -53,9 +53,9 @@ def train(
     for epoch in range(epochs):
         print("Epoch: " + str(epoch))
         for step, frames in enumerate(train_ds):
-            inputs, target = frames
+            inputs, targets = frames
             loss_values, metric_values = train_step(
-                model, inputs, target, optimizer, vgg16
+                model, inputs, targets, optimizer, vgg16
             )
             progbar.update(
                 step + 1,
@@ -70,9 +70,9 @@ def train(
                 ],
             )
         for step, frames in enumerate(valid_ds):
-            inputs, target = frames
+            inputs, targets = frames
             val_loss_values, val_metric_values = valid_step(
-                model, inputs, target, vgg16
+                model, inputs, targets, vgg16
             )
             val_progbar.update(
                 step + 1,
@@ -162,4 +162,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

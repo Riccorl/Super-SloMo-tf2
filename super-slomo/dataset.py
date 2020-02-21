@@ -1,6 +1,6 @@
 import pathlib
 import random
-
+import numpy as np
 import tensorflow as tf
 
 
@@ -31,9 +31,9 @@ def load_dataset(
             ds = ds.cache(cache)
         else:
             ds = ds.cache()
-    if train:
-        ds = ds.map(data_augment, num_parallel_calls=autotune)
-        ds = ds.shuffle(buffer_size=buffer_size)
+    # if train:
+        # ds = ds.map(data_augment, num_parallel_calls=autotune)
+        # ds = ds.shuffle(buffer_size=buffer_size)
     # else:
     # ds = ds.map(lambda *x: ((x[0], x[2], x[3]), x[1]))
     # `prefetch` lets the dataset fetch batches in the background while the model is training.
@@ -44,13 +44,12 @@ def load_dataset(
 def data_augment(frames, frame_t):
     """
     Augment the images in the dataset
-    :param frame_0: frame_0
-    :param frame_t: frame_t
-    :param frame_1: frame_1
-    :param frame_t_index: index of frame_t
+    :param frames: frames
+    :param frame_t: frame target
     :return: the frames augmented
     """
     w, h = 352, 352
+    frames = [decode_img(tf.io.read_file(f)) for f in frames]
     resized = tuple(
         [tf.image.resize(f, [w, h]) for f in frames[:2]]
         + [frames[2]]
@@ -66,13 +65,26 @@ def load_frames(folder_path: str):
     :return: the decoded frames
     """
     files = tf.io.matching_files(folder_path + "/*.jpg")
-    sampled_indeces = sorted(random.sample(range(12), 3))
-    sampled_files = [files[i] for i in sampled_indeces]
+    # sampled_indeces = sorted(np.random.choice(12, 3, replace=False))
+    sampled_indeces = tf.random.uniform([3], maxval=12, dtype=tf.int32)
+    sampled_indeces = tf.sort(sampled_indeces)
+    sampled_files = tf.gather(files, sampled_indeces)
+    # for i in sampled_indeces:
+    #     sampled_files.append(files[i])
+    # sampled_files = [files[i] for i in sampled_indeces]
     # load the raw data from the file as a string
-    decoded = [decode_img(tf.io.read_file(f)) for f in sampled_files]
-    frame_t = decoded.pop(1)
-    decoded = tuple(decoded + sampled_indeces[1:2])
-    return decoded, frame_t
+    # decoded = [decode_img(tf.io.read_file(f)) for f in sampled_files]
+    # frame_t = decoded.pop(1)
+    # decoded = tuple(decoded + sampled_indeces[1:2])
+    # frame_t = sampled_files[-1]
+    # sampled_files = sampled_files[:-1]
+    frame_0 = decode_img(sampled_files[0])
+    frame_1 = decode_img(sampled_files[1])
+    frame_t = decode_img(sampled_files[2])
+    # sampled_files = [decode_img(tf.io.read_file(f)) for f in sampled_files]
+    # decoded = tf.map_fn(lambda x: decode_img(tf.io.read_file(x)), sampled_files, dtype=tf.float32)
+    # sampled_files = tuple(tf.concat(sampled_files, sampled_indeces[1:2]))
+    return (frame_0, frame_1, sampled_indeces[1]), frame_t
 
 
 def decode_img(image: str):
@@ -81,6 +93,7 @@ def decode_img(image: str):
     :param image: the image to decode
     :return: the image decoded
     """
+    image = tf.io.read_file(image)
     # convert the compressed string to a 3D uint8 tensor
     image = tf.image.decode_jpeg(image, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
