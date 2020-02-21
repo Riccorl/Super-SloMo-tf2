@@ -1,7 +1,6 @@
 import argparse
 import os
 import pathlib
-import random
 import shutil
 
 import cv2
@@ -39,11 +38,10 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     return output_filename, fps, width, height
 
 
-def load_dataset(data_path: pathlib.Path, n_frames: int, batch_size: int = 32):
+def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
     """
     Prepare the tf.data.Dataset for inference
     :param data_path: directory of the dataset
-    :param n_frames: number of frames between frame_0 and frame_1
     :param batch_size: size of the batch
     :return: the loaded dataset
     """
@@ -55,19 +53,7 @@ def load_dataset(data_path: pathlib.Path, n_frames: int, batch_size: int = 32):
         .map(load_frames, num_parallel_calls=autotune)
         .batch(batch_size)
         .prefetch(autotune)
-        # .map(lambda x: repeat_frames(x, n_frames), num_parallel_calls=autotune)
-        # .flat_map(lambda *x: tf.data.Dataset.from_tensor_slices([i for i in x]))
-        # .map(load_frames, num_parallel_calls=autotune)
-        # .batch(batch_size)
-        # .prefetch(autotune)
     )
-    # for element in ds.as_numpy_iterator():
-    #     print(element)
-    # ds = (
-    #     ds.map(load_frames, num_parallel_calls=autotune)
-    #     .batch(batch_size)
-    #     .prefetch(autotune)
-    # )
     return ds
 
 
@@ -89,7 +75,7 @@ def load_frames(frames):
     """
     frame_0 = dataset.decode_img(tf.io.read_file(frames[0]))
     frame_1 = dataset.decode_img(tf.io.read_file(frames[1]))
-    return frame_0, frame_1  # , int(frames[2])
+    return frame_0, frame_1
 
 
 def deprocess(img):
@@ -105,16 +91,12 @@ def predict(
 ):
     data_path, fps, w, h = extract_frames(video_path, output_path)
 
-    # n_frames = ((slomo_rate * fps_out) - fps) // fps
-    batch_size = n_frames
-
     print("FPS output:", fps_out)
     print("Frame prediction:", n_frames)
 
     model = SloMoNet(n_frames=n_frames)
     tf.train.Checkpoint(net=model).restore(str(model_path))
-    # model.load_weights(str(model_path))
-    ds = load_dataset(data_path, n_frames, 1)
+    ds = load_dataset(data_path, 1)
     progbar = tf.keras.utils.Progbar(None)
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
@@ -128,7 +110,6 @@ def predict(
             predictions, _ = model(frames + ([f],), training=False)
             out_frames.append(deprocess(predictions[0]))
             progbar.add(1)
-        # out_frames.append(deprocess(frames[1]))
         last_frame = frames[1]
 
     out_frames.append(deprocess(last_frame))
