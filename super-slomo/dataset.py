@@ -80,7 +80,7 @@ def load_frames(folder_path: str):
     return (frame_0, frame_1, sampled_indeces[1]), frame_t
 
 
-def decode_img(image: str, train: bool = True):
+def decode_img(image: str, train: bool = False):
     """
     Decode the image from its filename
     :param image: the image to decode
