@@ -73,8 +73,8 @@ def load_frames(frames):
     :param frames: frames
     :return: the decoded frames
     """
-    frame_0 = dataset.decode_img(tf.io.read_file(frames[0]))
-    frame_1 = dataset.decode_img(tf.io.read_file(frames[1]))
+    frame_0 = dataset.decode_img(frames[0])
+    frame_1 = dataset.decode_img(frames[1])
     return frame_0, frame_1
 
 
