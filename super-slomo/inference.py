@@ -94,7 +94,7 @@ def predict(
     print("FPS output:", fps_out)
     print("Frame prediction:", n_frames)
 
-    model = SloMoNet(n_frames=n_frames)
+    model = SloMoNet(n_frames=n_frames + 2)
     tf.train.Checkpoint(net=model).restore(str(model_path))
     ds = load_dataset(data_path, 1)
     progbar = tf.keras.utils.Progbar(None)
