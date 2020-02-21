@@ -47,16 +47,20 @@ def data_augment(frames, frame_t):
     """
     frames = list(frames)
     index = frames.pop(-1)
-    normalized = _data_augment(frames + [frame_t])
-    frames = normalized[:-1] + [index]
-    frame_t = normalized[-1]
+    cropped = random_crop(frames + [frame_t])
+    frames = cropped[:-1] + [index]
+    frame_t = cropped[-1]
     return tuple(frames), frame_t
 
 
-def _data_augment(frames):
+def random_crop(frames):
+    """
+    Resize image to 360x360 and apply random crop 352x352
+    :param frames: frames in input
+    :return: cropped frames
+    """
     frames = [tf.image.resize(f, [360, 360]) for f in frames]
     frames = [tf.image.random_crop(f, size=[352, 352, 3]) for f in frames]
-    frames = [(f / 127.5) - 1 for f in frames]
     return frames
 
 
@@ -87,4 +91,6 @@ def decode_img(image: str):
     image = tf.image.decode_jpeg(image, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     image = tf.image.convert_image_dtype(image, tf.float32)
+    # normalize image
+    image = (image / 127.5) - 1
     return image
