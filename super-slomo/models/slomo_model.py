@@ -7,17 +7,17 @@ from models import layers
 class SloMoNet(tf.keras.Model):
     def __init__(self, n_frames=12, name="SloMoNet", **kwargs):
         super(SloMoNet, self).__init__(name=name, **kwargs)
-        t_slices = tf.constant(np.linspace(0, 1, n_frames + 2))
+        self.t_slices = tf.constant(np.linspace(0, 1, n_frames + 2))
         self.flow_comp_layer = layers.UNet(4, name="flow_comp")
-        self.optical_flow = layers.OpticalFlow(t=t_slices, name="optical_flow")
-        self.output_layer = layers.Output(t=t_slices, name="predictions")
+        self.optical_flow = layers.OpticalFlow(t=self.t_slices, name="optical_flow")
+        self.output_layer = layers.Output(t=self.t_slices, name="predictions")
         self.warping_layer = layers.WarpingOutput(name="warping_output")
 
     def call(self, inputs, training=False, **kwargs):
         frames_0, frames_1, frames_i = inputs
 
         # extract frame t coefficient
-        t_indeces = tf.gather(self.t, frames_i)
+        t_indeces = tf.gather(self.t_slices, frames_i)
         t_indeces = tf.cast(t_indeces, dtype=tf.float32)
         t_indeces = t_indeces[:, tf.newaxis, tf.newaxis, tf.newaxis]
 
