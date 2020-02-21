@@ -94,6 +94,6 @@ def decode_img(image: str, train: bool = True):
     image = tf.image.convert_image_dtype(image, tf.float32)
     if train:
         # normalize image
-        image = (image / 127.5) - 1
-        # image = tf.image.per_image_standardization(image)
+        # image = (image / 127.5) - 1
+        image = tf.image.per_image_standardization(image)
     return image
