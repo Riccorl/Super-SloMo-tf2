@@ -79,8 +79,13 @@ def load_frames(frames):
     return frame_0, frame_1
 
 
-def deprocess(img):
-    return (255 * img).numpy().astype(np.uint8)
+def deprocess(image):
+    """
+
+    :param image:
+    :return:
+    """
+    return (255 * image).numpy().astype(np.uint8)
 
 
 def predict(
@@ -90,10 +95,16 @@ def predict(
     n_frames: int,
     fps_out: int,
 ):
-    data_path, fps, w, h = extract_frames(video_path, output_path)
+    """
 
-    print("FPS output:", fps_out)
-    print("Frame prediction:", n_frames)
+    :param video_path:
+    :param model_path:
+    :param output_path:
+    :param n_frames:
+    :param fps_out:
+    :return:
+    """
+    data_path, fps, w, h = extract_frames(video_path, output_path)
 
     model = SloMoNet(n_frames=n_frames + 2)
     tf.train.Checkpoint(net=model).restore(str(model_path))
@@ -119,7 +130,7 @@ def predict(
         out_video.write(f)
 
     out_video.release()
-    # shutil.rmtree(data_path)
+    shutil.rmtree(data_path)
 
 
 def parse_args():
@@ -142,7 +153,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-
     video_path = pathlib.Path(args.video_path)
     output_path = pathlib.Path(args.output_path)
     model_path = pathlib.Path(args.model_path)
@@ -151,6 +161,5 @@ def main():
 
 if __name__ == "__main__":
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-    # os.environ["OMP_NUM_THREADS"] = "12"
     main()
 
