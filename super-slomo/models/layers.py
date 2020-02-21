@@ -169,10 +169,10 @@ class OpticalFlow(tf.keras.layers.Layer):
         g_i0_ft0 = self.backwarp_layer_t0([frames_0, f_t0])
         g_i1_ft1 = self.backwarp_layer_t1([frames_1, f_t1])
         flow_interp_in = tf.concat(
-            # [frames_0, frames_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0],
-            # axis=3,
-            [frames_0, frames_1, g_i1_ft1, g_i0_ft0, f_t0, f_t1],
+            [frames_0, frames_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0],
             axis=3,
+            # [frames_0, frames_1, g_i1_ft1, g_i0_ft0, f_t0, f_t1],
+            # axis=3,
         )
 
         flow_interp_out = self.flow_interp_layer(flow_interp_in)
@@ -181,6 +181,7 @@ class OpticalFlow(tf.keras.layers.Layer):
         delta_f_t0 = flow_interp_out[:, :, :, :2]
         delta_f_t1 = flow_interp_out[:, :, :, 2:4]
 
+        # visibility map
         v_t0 = tf.keras.activations.sigmoid(flow_interp_out[:, :, :, 4:5])
         v_t1 = 1 - v_t0
 
