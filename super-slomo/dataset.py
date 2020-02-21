@@ -60,12 +60,15 @@ def load_frames(folder_path: str):
     :return: the decoded frames
     """
     files = tf.io.matching_files(folder_path + "/*.jpg")
-    sampled_indeces = tf.random.uniform([3], maxval=12, dtype=tf.int32)
+    sampled_indeces = tf.random.uniform([10], maxval=12, dtype=tf.int32)
     sampled_indeces = tf.sort(sampled_indeces)
     sampled_files = tf.gather(files, sampled_indeces)
+    # frames = []
+    # for file in sampled_files:
+    #     frames.append(decode_img(file))
     frame_0 = decode_img(sampled_files[0])
-    frame_1 = decode_img(sampled_files[1])
-    frame_t = decode_img(sampled_files[2])
+    frame_1 = decode_img(sampled_files[2])
+    frame_t = decode_img(sampled_files[1])
     return (frame_0, frame_1, sampled_indeces[1]), frame_t
 
 
