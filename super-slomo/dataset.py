@@ -96,7 +96,7 @@ def decode_img(image: str, train: bool = False):
     
     if train:
         # normalize image
-        image = (image / 127.5) - 1
+        # image = (image / 127.5) - 1
         # image = tf.image.per_image_standardization(image)
         # resize and rancom crop
         image = tf.image.resize(image, [360, 360])
