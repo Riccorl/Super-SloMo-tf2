@@ -99,8 +99,8 @@ def decode_img(image: str, train: bool = False):
         image = (image / 127.5) - 1
         # image = tf.image.per_image_standardization(image)
         # resize and rancom crop
-        image = tf.image.resize(f, [360, 360])
-        image = tf.image.random_crop(f, size=[352, 352, 3])
+        image = tf.image.resize(image, [360, 360])
+        image = tf.image.random_crop(image, size=[352, 352, 3])
         # random flip
         # image = tf.image.random_flip_left_right(image)
     return image
