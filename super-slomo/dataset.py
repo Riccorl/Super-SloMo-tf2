@@ -22,7 +22,7 @@ def load_dataset(
     """
     autotune = tf.data.experimental.AUTOTUNE
     ds = tf.data.Dataset.list_files(str(data_dir / "*"))
-    ds = ds.map(load_frames, num_parallel_calls=autotune)
+    ds = ds.map(lambda x: load_frames(x, train), num_parallel_calls=autotune)
     # use `.cache(filename)` to cache preprocessing work for datasets that don't
     # fit in memory. It cause memory leak, check with more memory.
     if cache:
@@ -31,7 +31,7 @@ def load_dataset(
         else:
             ds = ds.cache()
     if train:
-        ds = ds.map(data_augment, num_parallel_calls=autotune)
+        # ds = ds.map(data_augment, num_parallel_calls=autotune)
         ds = ds.shuffle(buffer_size=buffer_size)
     # `prefetch` lets the dataset fetch batches in the background while the model is training.
     ds = ds.batch(batch_size, drop_remainder=True).prefetch(autotune)
@@ -59,12 +59,13 @@ def random_crop(frames):
     :param frames: frames in input
     :return: cropped frames
     """
-    frames = [tf.image.resize(f, [360, 360]) for f in frames]
-    frames = [tf.image.random_crop(f, size=[352, 352, 3]) for f in frames]
+    # frames = [tf.image.resize(f, [360, 360]) for f in frames]
+    # frames = [tf.image.random_crop(f, size=[352, 352, 3]) for f in frames]
+    frames = [tf.image.random_flip_left_right(f) for f in frames]
     return frames
 
 
-def load_frames(folder_path: str):
+def load_frames(folder_path: str, train: bool):
     """
     Load the frames in the folder specified by folder_path
     :param folder_path: folder path where frames are located
@@ -74,9 +75,9 @@ def load_frames(folder_path: str):
     sampled_indeces = tf.random.uniform([3], maxval=12, dtype=tf.int32)
     sampled_indeces = tf.sort(sampled_indeces)
     sampled_files = tf.gather(files, sampled_indeces)
-    frame_0 = decode_img(sampled_files[0])
-    frame_1 = decode_img(sampled_files[2])
-    frame_t = decode_img(sampled_files[1])
+    frame_0 = decode_img(sampled_files[0], train)
+    frame_1 = decode_img(sampled_files[2], train)
+    frame_t = decode_img(sampled_files[1], train)
     return (frame_0, frame_1, sampled_indeces[1]), frame_t
 
 
@@ -92,8 +93,14 @@ def decode_img(image: str, train: bool = False):
     image = tf.image.decode_jpeg(image, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     image = tf.image.convert_image_dtype(image, tf.float32)
+    
     if train:
         # normalize image
         image = (image / 127.5) - 1
         # image = tf.image.per_image_standardization(image)
+        # resize and rancom crop
+        image = tf.image.resize(f, [360, 360])
+        image = tf.image.random_crop(f, size=[352, 352, 3])
+        # random flip
+        # image = tf.image.random_flip_left_right(image)
     return image
