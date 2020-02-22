@@ -189,7 +189,7 @@ class OpticalFlow(tf.keras.layers.Layer):
         f_t0 = f_t0 + delta_f_t0
         f_t1 = f_t1 + delta_f_t1
 
-        return f_01, f_t0, v_t0, f_10, f_t1, v_t1
+        return f_01, f_t0, v_t0, f_10, f_t1, v_t1, g_i0_ft0, g_i1_ft1
 
 
 class Output(tf.keras.layers.Layer):
@@ -225,15 +225,11 @@ class WarpingOutput(tf.keras.layers.Layer):
     def build(self, input_shape):
         self.backwarp_layer1 = BackWarp()
         self.backwarp_layer2 = BackWarp()
-        self.backwarp_layer3 = BackWarp()
-        self.backwarp_layer4 = BackWarp()
 
     def call(self, inputs, **kwargs):
-        frame_0, frame_1, f_01, f_10, f_t0, f_t1 = inputs
+        frame_0, frame_1, f_01, f_10 = inputs
 
         return [
-            self.backwarp_layer1([frame_1, f_01]),
             self.backwarp_layer2([frame_0, f_10]),
-            self.backwarp_layer3([frame_0, f_t0]),
-            self.backwarp_layer4([frame_1, f_t1]),
+            self.backwarp_layer1([frame_1, f_01]),
         ]

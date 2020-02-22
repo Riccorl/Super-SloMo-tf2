@@ -24,10 +24,10 @@ class SloMoNet(tf.keras.Model):
         flow_input = tf.concat([frames_0, frames_1], axis=3)
         flow_out = self.flow_comp_layer(flow_input)
         optical_input = [frames_0, frames_1, flow_out, t_indeces]
-        f_01, f_t0, v_t0, f_10, f_t1, v_t1 = self.optical_flow(optical_input)
+        f_01, f_t0, v_t0, f_10, f_t1, v_t1, g_i0_ft0, g_i1_ft1 = self.optical_flow(optical_input)
         preds_input = [frames_0, f_t0, v_t0, frames_1, f_t1, v_t1, t_indeces]
         predictions = self.output_layer(preds_input)
-        warping_input = [frames_0, frames_1, f_01, f_10, f_t0, f_t1]
+        warping_input = [frames_0, frames_1, f_01, f_10]
         warping_output = self.warping_layer(warping_input)
-        losses_output = [f_01, f_10, f_t0, f_t1] + warping_output
+        losses_output = [f_01, f_10, f_t0, f_t1, g_i0_ft0, g_i1_ft1] + warping_output
         return predictions, losses_output
