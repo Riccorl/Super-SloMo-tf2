@@ -18,7 +18,7 @@ class UNet(tf.keras.layers.Layer):
             filters=32, kernel_size=7, strides=1, padding="same"
         )
         self.encoder1 = Encoder(64, 5)
-        self.encoder2 = Encoder(128, 5)
+        self.encoder2 = Encoder(128, 3)
         self.encoder3 = Encoder(256, 3)
         self.encoder4 = Encoder(512, 3)
         self.encoder5 = Encoder(512, 3)
@@ -139,8 +139,8 @@ class BackWarp_tf(tf.keras.layers.Layer):
 
     def build(self, inputs):
         image, flow = inputs
-        self.width = image.shape[1]
-        self.height = image.shape[2]
+        self.width = image[1]
+        self.height = image[2]
         self.grid_x, self.grid_y = tf.meshgrid(
             tf.range(self.width), tf.range(self.height)
         )
@@ -149,11 +149,83 @@ class BackWarp_tf(tf.keras.layers.Layer):
         image, flow = inputs
         h_flow = flow[:, :, :, 0]
         v_flow = flow[:, :, :, 1]
-        x = tf.expand_dims(self.grid_x, 0) + h_flow
-        y = tf.expand_dims(self.grid_y, 0) + v_flow
+        x = tf.cast(tf.expand_dims(self.grid_x, 0), flow.dtype) + h_flow
+        y = tf.cast(tf.expand_dims(self.grid_y, 0), flow.dtype) + v_flow
 
+        x = 2 * (x / self.width - 0.5)
+        y = 2 * (y / self.height - 0.5)
         grid = tf.stack([x, y], axis=2)
-        return
+        out = self._interpolate(image, grid)
+        return out
+
+    def _interpolate(self, image, sampled_grids):
+        batch_size = image.shape[0]
+        num_channels = image.shape[3]
+
+        x = tf.cast(tf.keras.backend.flatten(sampled_grids[:, :, 0]), dtype="float32")
+        y = tf.cast(tf.keras.backend.flatten(sampled_grids[:, :, 1]), dtype="float32")
+
+        x = 0.5 * (x + 1.0) * tf.cast(self.width, dtype="float32")
+        y = 0.5 * (y + 1.0) * tf.cast(self.height, dtype="float32")
+
+        x0 = tf.cast(x, "int32")
+        x1 = x0 + 1
+        y0 = tf.cast(y, "int32")
+        y1 = y0 + 1
+
+        max_x = int(image.shape[2] - 1)
+        max_y = int(image.shape[1] - 1)
+
+        x0 = tf.clip_by_value(x0, 0, max_x)
+        x1 = tf.clip_by_value(x1, 0, max_x)
+        y0 = tf.clip_by_value(y0, 0, max_y)
+        y1 = tf.clip_by_value(y1, 0, max_y)
+
+        pixels_batch = tf.range(0, batch_size) * (self.height * self.width)
+        pixels_batch = tf.expand_dims(pixels_batch, axis=-1)
+        flat_output_size = self.height * self.width
+        base = tf.keras.backend.repeat_elements(pixels_batch, flat_output_size, axis=1)
+        base = tf.keras.backend.flatten(base)
+
+        # base_y0 = base + (y0 * width)
+        base_y0 = y0 * self.width
+        base_y0 = base + base_y0
+        # base_y1 = base + (y1 * width)
+        base_y1 = y1 * self.width
+        base_y1 = base_y1 + base
+
+        indices_a = base_y0 + x0
+        indices_b = base_y1 + x0
+        indices_c = base_y0 + x1
+        indices_d = base_y1 + x1
+
+        flat_image = tf.reshape(image, shape=(-1, num_channels))
+        flat_image = tf.cast(flat_image, dtype="float32")
+        pixel_values_a = tf.gather(flat_image, indices_a)
+        pixel_values_b = tf.gather(flat_image, indices_b)
+        pixel_values_c = tf.gather(flat_image, indices_c)
+        pixel_values_d = tf.gather(flat_image, indices_d)
+
+        x0 = tf.cast(x0, "float32")
+        x1 = tf.cast(x1, "float32")
+        y0 = tf.cast(y0, "float32")
+        y1 = tf.cast(y1, "float32")
+
+        area_a = tf.expand_dims(((x1 - x) * (y1 - y)), 1)
+        area_b = tf.expand_dims(((x1 - x) * (y - y0)), 1)
+        area_c = tf.expand_dims(((x - x0) * (y1 - y)), 1)
+        area_d = tf.expand_dims(((x - x0) * (y - y0)), 1)
+
+        values_a = area_a * pixel_values_a
+        values_b = area_b * pixel_values_b
+        values_c = area_c * pixel_values_c
+        values_d = area_d * pixel_values_d
+
+        interpolated_image = values_a + values_b + values_c + values_d
+        new_shape = (batch_size, self.height, self.width, num_channels)
+        interpolated_image = tf.reshape(interpolated_image, new_shape)
+
+        return interpolated_image
 
 
 class BackWarp(tf.keras.layers.Layer):
@@ -167,9 +239,7 @@ class BackWarp(tf.keras.layers.Layer):
         super(BackWarp, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        # self.backwarp = warp.dense_image_warp
-        self.backwarp = warp.flow_back_wrap
-        # self.backwarp = tfa.image.dense_image_warp
+        self.backwarp = tfa.image.dense_image_warp
 
     def call(self, inputs, **kwargs):
         image, flow = inputs
@@ -249,13 +319,13 @@ class WarpingOutput(tf.keras.layers.Layer):
         super(WarpingOutput, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        self.backwarp_layer1 = BackWarp()
+        self.backwarp_layer = BackWarp()
         self.backwarp_layer2 = BackWarp()
 
     def call(self, inputs, **kwargs):
         frame_0, frame_1, f_01, f_10 = inputs
 
         return [
-            self.backwarp_layer2([frame_0, f_10]),
-            self.backwarp_layer1([frame_1, f_01]),
+            self.backwarp_layer([frame_0, f_10]),
+            self.backwarp_layer2([frame_1, f_01]),
         ]

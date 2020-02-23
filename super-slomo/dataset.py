@@ -1,5 +1,5 @@
 import pathlib
-
+import numpy as np
 import tensorflow as tf
 
 
@@ -45,7 +45,8 @@ def load_frames(folder_path: str, train: bool):
     :return: the decoded frames
     """
     files = tf.io.matching_files(folder_path + "/*.jpg")
-    sampled_indeces = tf.random.uniform([3], maxval=12, dtype=tf.int32)
+
+    sampled_indeces = tf.random.shuffle(tf.range(12))[:3]
     sampled_indeces = tf.sort(sampled_indeces)
     sampled_files = tf.gather(files, sampled_indeces)
     frame_0 = decode_img(sampled_files[0], train)
@@ -71,9 +72,10 @@ def decode_img(image: str, train: bool = False):
         # normalize
         # image = tf.image.per_image_standardization(image)
         # resize and rancom crop
-        image = tf.image.resize(image, [360, 360])
-        image = tf.image.random_crop(image, size=[352, 352, 3])
+        # image = tf.image.resize(image, [360, 360])
+        image = tf.image.resize(image, [352, 352])
+        # image = tf.image.random_crop(image, size=[352, 352, 3])
         # random flip
-        image = tf.image.random_flip_left_right(image)
+        # image = tf.image.random_flip_left_right(image)
         # image = image - mean
     return image
