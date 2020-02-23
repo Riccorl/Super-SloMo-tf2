@@ -53,9 +53,11 @@ def load_frames(folder_path: str, train: bool):
     frame_0 = decode_img(sampled_files[0])
     frame_1 = decode_img(sampled_files[2])
     frame_t = decode_img(sampled_files[1])
-
-    frames = data_augment(tf.concat([frame_0, frame_1, frame_t], axis=2))
-    return (frames[:, :, :3], frames[:, :, 3:6], sampled_indeces[1]), frames[:, :, 6:9]
+    
+    if train:
+        frames = data_augment(tf.concat([frame_0, frame_1, frame_t], axis=2))
+        frame_0, frame_1, frame_t = frames[:, :, :3], frames[:, :, 3:6], frames[:, :, 6:9]
+    return (frame_0, frame_1, sampled_indeces[1]), frame_t
 
 
 def data_augment(image):

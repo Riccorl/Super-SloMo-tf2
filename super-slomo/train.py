@@ -107,7 +107,7 @@ def train_step(model, inputs, targets, optimizer, loss_obj):
     with tf.GradientTape() as tape:
         predictions, losses_output = model(inputs, training=True)
         loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
-        metric_values = metrics.compute_metrics(inputs[1], predictions)
+        metric_values = metrics.compute_metrics(targets, predictions)
 
     grads = tape.gradient(loss_values, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
@@ -126,7 +126,7 @@ def valid_step(model, inputs, targets, loss_obj):
     """
     predictions, losses_output = model(inputs, training=False)
     loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
-    metric_values = metrics.compute_metrics(inputs[1], predictions)
+    metric_values = metrics.compute_metrics(targets, predictions)
     return loss_values, metric_values
 
 
