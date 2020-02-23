@@ -1,5 +1,5 @@
 import pathlib
-import numpy as np
+
 import tensorflow as tf
 
 
@@ -49,17 +49,33 @@ def load_frames(folder_path: str, train: bool):
     sampled_indeces = tf.random.shuffle(tf.range(12))[:3]
     sampled_indeces = tf.sort(sampled_indeces)
     sampled_files = tf.gather(files, sampled_indeces)
-    frame_0 = decode_img(sampled_files[0], train)
-    frame_1 = decode_img(sampled_files[2], train)
-    frame_t = decode_img(sampled_files[1], train)
-    return (frame_0, frame_1, sampled_indeces[1]), frame_t
+
+    frame_0 = decode_img(sampled_files[0])
+    frame_1 = decode_img(sampled_files[2])
+    frame_t = decode_img(sampled_files[1])
+
+    frames = data_augment(tf.concat([frame_0, frame_1, frame_t], axis=2))
+    return (frames[:, :, :3], frames[:, :, 3:6], sampled_indeces[1]), frames[:, :, 6:9]
 
 
-def decode_img(image: str, train: bool = False):
+def data_augment(image):
+    # mean = tf.constant([0.429, 0.431, 0.397])
+    # normalize
+    # image = tf.image.per_image_standardization(image)
+    # resize and rancom crop
+    image = tf.image.resize(image, [360, 360])
+    # image = tf.image.resize(image, [352, 352])
+    image = tf.image.random_crop(image, size=[352, 352, 9])
+    # random flip
+    image = tf.image.random_flip_left_right(image)
+    # image = image - mean
+    return image
+
+
+def decode_img(image: str):
     """
     Decode the image from its filename
     :param image: the image to decode
-    :param train: if train, apply normalization
     :return: the image decoded
     """
     image = tf.io.read_file(image)
@@ -67,15 +83,4 @@ def decode_img(image: str, train: bool = False):
     image = tf.image.decode_jpeg(image, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     image = tf.image.convert_image_dtype(image, tf.float32)
-    # mean = tf.constant([0.429, 0.431, 0.397])
-    if train:
-        # normalize
-        # image = tf.image.per_image_standardization(image)
-        # resize and rancom crop
-        # image = tf.image.resize(image, [360, 360])
-        image = tf.image.resize(image, [352, 352])
-        # image = tf.image.random_crop(image, size=[352, 352, 3])
-        # random flip
-        # image = tf.image.random_flip_left_right(image)
-        # image = image - mean
     return image
