@@ -9,8 +9,8 @@ class SloMoNet(tf.keras.Model):
         super(SloMoNet, self).__init__(name=name, **kwargs)
         self.t_slices = tf.constant(np.linspace(0, 1, n_frames))
         self.flow_comp_layer = layers.UNet(4, name="flow_comp")
-        self.optical_flow = layers.OpticalFlow(t=self.t_slices, name="optical_flow")
-        self.output_layer = layers.Output(t=self.t_slices, name="predictions")
+        self.optical_flow = layers.OpticalFlow(name="optical_flow")
+        self.output_layer = layers.Output(name="predictions")
         self.warping_layer = layers.WarpingOutput(name="warping_output")
 
     def call(self, inputs, training=False, **kwargs):
