@@ -108,7 +108,7 @@ def predict(
     data_path, fps, w, h = extract_frames(video_path, output_path)
 
     model = SloMoNet(n_frames=n_frames + 2)
-    tf.train.Checkpoint(net=model).restore(str(model_path))
+    tf.train.Checkpoint(net=model).restore(str(model_path)).expect_partial()
     ds = load_dataset(data_path, 1)
     progbar = tf.keras.utils.Progbar(None)
 
@@ -161,4 +161,3 @@ def main():
 if __name__ == "__main__":
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
     main()
-
