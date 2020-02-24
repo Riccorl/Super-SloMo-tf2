@@ -7,7 +7,10 @@ class Losses:
     def __init__(self):
         self.mae = tf.keras.losses.MeanAbsoluteError()
         self.mse = tf.keras.losses.MeanSquaredError()
-        self.vgg16 = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
+        model = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
+        self.vgg16 = tf.keras.Model(
+            model.inputs, model.get_layer("block4_conv3").output, trainable=False
+        )
 
     @tf.function
     def reconstruction_loss(self, y_true, y_pred):
@@ -28,9 +31,21 @@ class Losses:
         :param y_pred: The predicted values
         :return:
         """
-        y_true = self.vgg16(y_true)
-        y_pred = self.vgg16(y_pred)
+        y_true = self.extract_feat(self.vgg16, y_true)
+        y_pred = self.extract_feat(self.vgg16, y_pred)
         return self.mse(y_true, y_pred)
+
+    @tf.function
+    def extract_feat(self, feat_extractor, inputs):
+        """
+        :param feat_extractor:
+        :param inputs:
+        :return:
+        """
+        feats = inputs
+        for layer in feat_extractor.layers:
+            feats = layer(feats)
+        return feats
 
     @tf.function
     def warping_loss(self, frame_0, frame_t, frame_1, backwarp_frames):
@@ -43,10 +58,10 @@ class Losses:
         :return:
         """
         return (
-            self.mae(frame_t, backwarp_frames[0])
-            + self.mae(frame_t, backwarp_frames[1])
-            + self.mae(frame_1, backwarp_frames[2])
-            + self.mae(frame_0, backwarp_frames[3])
+            self.mae(frame_0, backwarp_frames[0])
+            + self.mae(frame_1, backwarp_frames[1])
+            + self.mae(frame_t, backwarp_frames[2])
+            + self.mae(frame_t, backwarp_frames[3])
         )
 
     @tf.function
@@ -68,9 +83,9 @@ class Losses:
         :param frame:
         :return:
         """
-        return tf.reduce_mean(
-            tf.abs(frame[:, 1:, :, :] - frame[:, :-1, :, :])
-        ) + tf.reduce_mean(tf.abs(frame[:, :, 1:, :] - frame[:, :, :-1, :]))
+        x = tf.reduce_mean(tf.abs(frame[:, 1:, :, :] - frame[:, :-1, :, :]))
+        y = tf.reduce_mean(tf.abs(frame[:, :, 1:, :] - frame[:, :, :-1, :]))
+        return x + y
 
     @tf.function
     def compute_losses(self, predictions, loss_values, inputs, frames_t):
@@ -86,8 +101,9 @@ class Losses:
         frames_0, frames_1, _ = inputs
 
         # unpack loss variables
-        f_01, f_10, f_t0, f_t1 = loss_values[:4]
-        backwarp_frames = loss_values[4:]
+        f_01, f_10 = loss_values[:2]
+        backwarp_frames = loss_values[2:]
+
         rec_loss = self.reconstruction_loss(frames_t, predictions)
         perc_loss = self.perceptual_loss(frames_t, predictions)
         smooth_loss = self.smoothness_loss(f_01, f_10)
