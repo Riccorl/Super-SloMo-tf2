@@ -35,7 +35,7 @@ class SloMoNet(tf.keras.Model):
         predictions = self.output_layer(preds_input)
 
         # backwarp for loss
-        warp0 = self.warp_layers[0]([frames_0, flow_10])
-        warp1 = self.warp_layers[1]([frames_1, flow_01])
+        warp0 = self.warp_layers[1]([frames_1, flow_01])
+        warp1 = self.warp_layers[0]([frames_0, flow_10])
         losses_output = [flow_01, flow_10, warp0, warp1, g_i0_ft0, g_i1_ft1]
         return predictions, losses_output
