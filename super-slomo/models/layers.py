@@ -1,8 +1,6 @@
 import tensorflow as tf
 import tensorflow_addons as tfa
 
-from models import warp
-
 
 class UNet(tf.keras.layers.Layer):
     def __init__(self, out_filters, name="UNet", **kwargs):
@@ -156,24 +154,21 @@ class OpticalFlow(tf.keras.layers.Layer):
         self.backwarp_layer_t1 = BackWarp()
 
     def call(self, inputs, **kwargs):
-        frames_0, frames_1, flow, t_indeces = inputs
-
-        # flow computation
-        f_01, f_10 = flow[:, :, :, :2], flow[:, :, :, 2:]
+        frames_0, frames_1, f_01, f_10, t_indeces = inputs
 
         t0_value = (-1 * (1 - t_indeces)) * t_indeces
         t1_value = t_indeces * t_indeces
-        f_t0 = (t0_value * f_01) + (t1_value * f_10)
+        f_t0_t = (t0_value * f_01) + (t1_value * f_10)
 
         t1_value = (1 - t_indeces) * (1 - t_indeces)
-        f_t1 = (t1_value * f_01) - (t0_value * f_10)
+        f_t1_t = (t1_value * f_01) - (t0_value * f_10)
 
         # flow interpolation
-        g_i0_ft0 = self.backwarp_layer_t0([frames_0, f_t0])
-        g_i1_ft1 = self.backwarp_layer_t1([frames_1, f_t1])
+        g_i0_ft0 = self.backwarp_layer_t0([frames_0, f_t0_t])
+        g_i1_ft1 = self.backwarp_layer_t1([frames_1, f_t1_t])
 
         flow_interp_in = tf.concat(
-            [frames_0, frames_1, f_01, f_10, f_t1, f_t0, g_i1_ft1, g_i0_ft0], axis=3
+            [frames_0, frames_1, f_01, f_10, f_t1_t, f_t0_t, g_i1_ft1, g_i0_ft0], axis=3
         )
         flow_interp_out = self.flow_interp_layer(flow_interp_in)
 
@@ -186,10 +181,10 @@ class OpticalFlow(tf.keras.layers.Layer):
         # v_t0 = tf.tile(v_t0, [1, 1, 1, 3])
         v_t1 = 1 - v_t0
 
-        f_t0 = f_t0 + delta_f_t0
-        f_t1 = f_t1 + delta_f_t1
+        f_t0 = f_t0_t + delta_f_t0
+        f_t1 = f_t1_t + delta_f_t1
 
-        return f_01, f_t0, v_t0, f_10, f_t1, v_t1, g_i0_ft0, g_i1_ft1
+        return f_t0, v_t0, f_t1, v_t1, g_i0_ft0, g_i1_ft1
 
 
 class Output(tf.keras.layers.Layer):

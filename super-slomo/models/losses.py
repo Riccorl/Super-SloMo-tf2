@@ -33,7 +33,7 @@ class Losses:
         return self.mse(y_true, y_pred)
 
     @tf.function
-    def warping_loss(self, frame_0, frame_t, frame_1, backwarp_frames):
+    def warping_loss(self, frame_0, frame_t, frame_1, backwarp_frames, n):
         """
         Warping loss lw to model the quality of the computed optical flow
         :param frame_0:
@@ -43,10 +43,10 @@ class Losses:
         :return:
         """
         return (
-            self.mae(frame_t, backwarp_frames[0])
-            + self.mae(frame_t, backwarp_frames[1])
-            + self.mae(frame_1, backwarp_frames[2])
-            + self.mae(frame_0, backwarp_frames[3])
+            self.mae(frame_0, backwarp_frames[0])
+            + self.mae(frame_1, backwarp_frames[1])
+            + (self.mae(frame_t, backwarp_frames[2]) / n)
+            + (self.mae(frame_t, backwarp_frames[3]) / n)
         )
 
     @tf.function
@@ -68,9 +68,9 @@ class Losses:
         :param frame:
         :return:
         """
-        return tf.reduce_mean(
-            tf.abs(frame[:, 1:, :, :] - frame[:, :-1, :, :])
-        ) + tf.reduce_mean(tf.abs(frame[:, :, 1:, :] - frame[:, :, :-1, :]))
+        x = tf.reduce_mean(tf.abs(frame[:, 1:, :, :] - frame[:, :-1, :, :]))
+        y = tf.reduce_mean(tf.abs(frame[:, :, 1:, :] - frame[:, :, :-1, :]))
+        return x + y
 
     def compute_losses(self, predictions, loss_values, inputs, frames_t):
         """
@@ -82,21 +82,21 @@ class Losses:
         :param frames_t: target frames
         :return: the losses
         """
-        rec_loss, perc_loss, warp_loss, smooth_loss = 0, 0, 0, 0
+        rec_loss, perc_loss = 0, 0
         frames_0, frames_1, _ = inputs
-
+        f_01, f_10 = loss_values[:2]
+        backwarp_values = loss_values[2:]
         # unpack loss variables
-        for true, pred, loss in zip(frames_t, predictions, loss_values):
-            f_01, f_10, f_t0, f_t1 = loss[:4]
-            backwarp_frames = loss[4:]
+        for true, pred in zip(frames_t, predictions):
             rec_loss += self.reconstruction_loss(true, pred)
             perc_loss += self.perceptual_loss(true, pred)
-            smooth_loss += self.smoothness_loss(f_01, f_10)
-            warp_loss += self.warping_loss(frames_0, true, frames_1, backwarp_frames)
 
         rec_loss /= len(predictions)
         perc_loss /= len(predictions)
-        warp_loss /= len(predictions)
+        warp_loss = self.warping_loss(
+            frames_0, frames_1, backwarp_values, len(frames_t)
+        )
+        smooth_loss = self.smoothness_loss(f_01, f_10)
 
         total_loss = (
             config.REC_LOSS * rec_loss
