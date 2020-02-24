@@ -61,16 +61,17 @@ def load_frames(folder_path: str, train: bool):
 
 
 def data_augment(image):
-    # mean = tf.constant([0.429, 0.431, 0.397])
-    # normalize
-    # image = tf.image.per_image_standardization(image)
     # resize and rancom crop
     image = tf.image.resize(image, [360, 360])
     # image = tf.image.resize(image, [352, 352])
     image = tf.image.random_crop(image, size=[352, 352, 9])
     # random flip
     image = tf.image.random_flip_left_right(image)
-    # image = image - mean
+    # normalization
+    # mean = tf.tile(tf.constant([0.485, 0.456, 0.406]))
+    # std = tf.tile(tf.constant([0.229, 0.224, 0.225]))
+    # image = (image - mean) / std
+    # image = tf.image.per_image_standardization(image)
     return image
 
 
