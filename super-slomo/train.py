@@ -3,12 +3,11 @@ import datetime
 import os
 import pathlib
 
-import numpy as np
 import tensorflow as tf
+from models import losses, metrics
 
 import config
 import dataset
-from models import losses, metrics
 from models.slomo_model import SloMoNet
 
 
@@ -45,17 +44,17 @@ def train(
 
     # Custom training
     model = SloMoNet()
-    vgg16 = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
+    loss_obj = losses.Losses()
 
     for epoch in range(epochs):
         print("Epoch: " + str(epoch))
         for step, frames in enumerate(train_ds):
             inputs, targets = frames
             loss_values, metric_values = train_step(
-                model, inputs, targets, optimizer, vgg16
+                model, inputs, targets, optimizer, loss_obj
             )
             progbar.update(
                 step + 1,
@@ -72,7 +71,7 @@ def train(
         for step, frames in enumerate(valid_ds):
             inputs, targets = frames
             val_loss_values, val_metric_values = valid_step(
-                model, inputs, targets, vgg16
+                model, inputs, targets, loss_obj
             )
             val_progbar.update(
                 step + 1,
@@ -88,7 +87,6 @@ def train(
             )
         ckpt.step.assign_add(1)
         save_path = manager.save()
-        # model.save_weights(str(model_dir / "weights_{}.tf".format(epoch)), save_format="tf")
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
 
     final_file = model_dir / "weights_final_{}.tf".format(epochs)
@@ -96,20 +94,20 @@ def train(
 
 
 @tf.function
-def train_step(model, inputs, targets, optimizer, vgg16):
+def train_step(model, inputs, targets, optimizer, loss_obj):
     """
     Train step for the model in input
     :param model: SloMo model
     :param inputs: frames in input
     :param targets: target frames
     :param optimizer: the optimizer
-    :param vgg16: vgg16 pretrained for perceptual loss
+    :param loss_obj: the loss object
     :return: loss values and metrics values
     """
     with tf.GradientTape() as tape:
         predictions, losses_output = model(inputs, training=True)
-        loss_values = losses.compute_losses(predictions, losses_output, inputs, targets, vgg16)
-        metric_values = metrics.compute_metrics(inputs[1], predictions)
+        loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
+        metric_values = metrics.compute_metrics(targets, predictions)
 
     grads = tape.gradient(loss_values, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
@@ -117,18 +115,18 @@ def train_step(model, inputs, targets, optimizer, vgg16):
 
 
 @tf.function
-def valid_step(model, inputs, targets, vgg16):
+def valid_step(model, inputs, targets, loss_obj):
     """
     Validation step for the model in input
     :param model: SloMo model
     :param inputs: frames in input
     :param targets: target frames
-    :param vgg16: vgg16 pretrained for perceptual loss
+    :param loss_obj: the loss object
     :return: loss values and metrics values
     """
     predictions, losses_output = model(inputs, training=False)
-    loss_values = losses.compute_losses(predictions, losses_output, inputs, targets, vgg16)
-    metric_values = metrics.compute_metrics(inputs[1], predictions)
+    loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
+    metric_values = metrics.compute_metrics(targets, predictions)
     return loss_values, metric_values
 
 
