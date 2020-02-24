@@ -77,10 +77,16 @@ def load_frames(frames):
     frame_0 = dataset.decode_img(frames[0])
     frame_1 = dataset.decode_img(frames[1])
     return frame_0, frame_1
+    # return frames
 
 
-def deprocess(img):
-    return (255 * img).numpy().astype(np.uint8)
+def deprocess(image):
+    """
+
+    :param image:
+    :return:
+    """
+    return (255 * image).numpy().astype(np.uint8)
 
 
 def predict(
@@ -90,36 +96,40 @@ def predict(
     n_frames: int,
     fps_out: int,
 ):
-    data_path, fps, w, h = extract_frames(video_path, output_path)
+    """
 
-    print("FPS output:", fps_out)
-    print("Frame prediction:", n_frames)
+    :param video_path:
+    :param model_path:
+    :param output_path:
+    :param n_frames:
+    :param fps_out:
+    :return:
+    """
+    data_path, fps, w, h = extract_frames(video_path, output_path)
 
     model = SloMoNet(n_frames=n_frames + 2)
     tf.train.Checkpoint(net=model).restore(str(model_path))
     ds = load_dataset(data_path, 1)
     progbar = tf.keras.utils.Progbar(None)
 
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out_video = cv2.VideoWriter(str(output_path), fourcc, fps_out, (w, h))
-
     out_frames = []
     last_frame = None
     for step, frames in enumerate(ds):
-        out_frames.append(deprocess(frames[0]))
+        out_frames.append(deprocess(frames[0][0]))
         for f in range(1, n_frames + 1):
             predictions, _ = model(frames + ([f],), training=False)
             out_frames.append(deprocess(predictions[0]))
             progbar.add(1)
-        last_frame = frames[1]
-
+        last_frame = frames[1][0]
     out_frames.append(deprocess(last_frame))
+
     print("\n Writing file...")
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out_video = cv2.VideoWriter(str(output_path), fourcc, fps_out, (w, h))
     for f in out_frames:
         out_video.write(f)
-
     out_video.release()
-    # shutil.rmtree(data_path)
+    shutil.rmtree(data_path)
 
 
 def parse_args():
@@ -142,7 +152,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-
     video_path = pathlib.Path(args.video_path)
     output_path = pathlib.Path(args.output_path)
     model_path = pathlib.Path(args.model_path)
@@ -151,6 +160,5 @@ def main():
 
 if __name__ == "__main__":
     os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
-    # os.environ["OMP_NUM_THREADS"] = "12"
     main()
 
