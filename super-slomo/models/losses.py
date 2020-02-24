@@ -7,7 +7,8 @@ class Losses:
     def __init__(self):
         self.mae = tf.keras.losses.MeanAbsoluteError()
         self.mse = tf.keras.losses.MeanSquaredError()
-        self.vgg16 = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
+        model = tf.keras.applications.VGG16(weights="imagenet", include_top=False, input_shape=(352, 352, 3))
+        self.vgg16 = tf.keras.Model(model.inputs, model.get_layer("block4_conv3").output)
 
     @tf.function
     def reconstruction_loss(self, y_true, y_pred):
@@ -28,25 +29,42 @@ class Losses:
         :param y_pred: The predicted values
         :return:
         """
-        y_true = self.vgg16(y_true)
-        y_pred = self.vgg16(y_pred)
+        # y_true = self.vgg16.predict((tf.expand_dims(y_true, 0)), steps=1)
+        # y_pred = self.vgg16.predict((tf.expand_dims(y_pred, 0)), steps=1)
+        y_true = self.extract_feat(self.vgg16, tf.expand_dims(y_true, 0))
+        y_pred = self.extract_feat(self.vgg16, tf.expand_dims(y_pred, 0))
         return self.mse(y_true, y_pred)
 
     @tf.function
-    def warping_loss(self, frame_0, frame_t, frame_1, backwarp_frames, n):
+    def extract_feat(self, feat_extractor, inputs):
+        """
+
+        :param feat_extractor:
+        :param inputs:
+        :return:
+        """
+        feats = inputs
+        for layer in feat_extractor.layers:
+            feats = layer(feats)
+        return feats
+
+    @tf.function
+    def warping_loss(self, frame_0, frames_t, frame_1, backwarp_frames, n):
         """
         Warping loss lw to model the quality of the computed optical flow
         :param frame_0:
-        :param frame_t:
+        :param frames_t:
         :param frame_1:
         :param backwarp_frames:
         :return:
         """
+        w_3 = sum([self.mae(frames_t[i], backwarp_frames[2][i]) for i in range(n)])
+        w_4 = sum([self.mae(frames_t[i], backwarp_frames[3][i]) for i in range(n)])
         return (
-            self.mae(frame_0, backwarp_frames[0])
-            + self.mae(frame_1, backwarp_frames[1])
-            + (self.mae(frame_t, backwarp_frames[2]) / n)
-            + (self.mae(frame_t, backwarp_frames[3]) / n)
+                self.mae(frame_0, backwarp_frames[0])
+                + self.mae(frame_1, backwarp_frames[1])
+                + (w_3 / n)
+                + (w_4 / n)
         )
 
     @tf.function
@@ -82,26 +100,33 @@ class Losses:
         :param frames_t: target frames
         :return: the losses
         """
-        rec_loss, perc_loss = 0, 0
+        rec_loss, perc_loss, warp_loss, smooth_loss = 0, 0, 0, 0
         frames_0, frames_1, _ = inputs
+
+        # tf.print("frames_t", frames_t.shape)
+        # frames_t = tf.reshape(frames_t, [9, 3, 352, 352, 3])
+        # tf.print("frames_t", frames_t.shape)
+
+        # unpack loss variables
         f_01, f_10 = loss_values[:2]
         backwarp_values = loss_values[2:]
-        # unpack loss variables
-        for true, pred in zip(frames_t, predictions):
-            rec_loss += self.reconstruction_loss(true, pred)
-            perc_loss += self.perceptual_loss(true, pred)
 
-        rec_loss /= len(predictions)
-        perc_loss /= len(predictions)
-        warp_loss = self.warping_loss(
-            frames_0, frames_1, backwarp_values, len(frames_t)
-        )
-        smooth_loss = self.smoothness_loss(f_01, f_10)
+        for batch_true, batch_pred in zip(frames_t, predictions):
+            for true, pred in zip(batch_true, batch_pred):
+                rec_loss += self.reconstruction_loss(true, pred)
+                perc_loss += self.perceptual_loss(true, pred)
+
+            rec_loss /= len(batch_true)
+            perc_loss /= len(batch_true)
+            warp_loss += self.warping_loss(
+                frames_0, batch_true, frames_1, backwarp_values, len(batch_true)
+            )
+            smooth_loss += self.smoothness_loss(f_01, f_10)
 
         total_loss = (
-            config.REC_LOSS * rec_loss
-            + config.PERCEP_LOSS * perc_loss
-            + config.WRAP_LOSS * warp_loss
-            + config.SMOOTH_LOSS * smooth_loss
+                config.REC_LOSS * rec_loss
+                + config.PERCEP_LOSS * perc_loss
+                + config.WRAP_LOSS * warp_loss
+                + config.SMOOTH_LOSS * smooth_loss
         )
         return total_loss, rec_loss, perc_loss, smooth_loss, warp_loss

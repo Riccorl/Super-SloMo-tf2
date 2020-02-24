@@ -24,7 +24,7 @@ class SloMoNet(tf.keras.Model):
 
         predictions = []
         losses_output = [flow_01, flow_10]
-        warp2, warp3 = 0, 0
+        warp2, warp3 = [], []
         for i in frames_i:
 
             # extract frame t coefficient
@@ -39,10 +39,21 @@ class SloMoNet(tf.keras.Model):
             preds_input = [frames_0, f_t0, v_t0, frames_1, f_t1, v_t1, t_indeces]
             predictions.append(self.output_layer(preds_input))
 
-            warp2 += g_i0_ft0
-            warp3 += g_i1_ft1
+            warp2.append(g_i0_ft0)
+            warp3.append(g_i1_ft1)
 
-        warp0 = self.warp_layers[0](frames_0, flow_10)
-        warp1 = self.warp_layers[1](frames_1, flow_01)
+        warp0 = self.warp_layers[0]([frames_0, flow_10])
+        warp1 = self.warp_layers[1]([frames_1, flow_01])
         losses_output += [warp0, warp1, warp2, warp3]
+        predictions = tf.convert_to_tensor(predictions)
+        predictions = tf.reshape(
+            predictions,
+            [
+                frames_0.shape[0],
+                frames_i.shape[1],
+                frames_0.shape[1],
+                frames_0.shape[2],
+                frames_0.shape[3],
+            ],
+        )
         return predictions, losses_output
