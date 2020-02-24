@@ -6,7 +6,7 @@ import tensorflow as tf
 def load_dataset(
     data_dir: pathlib.Path,
     batch_size: int = 32,
-    buffer_size: int = 1000,
+    buffer_size: int = 500,
     cache: bool = False,
     train: bool = True,
 ):
@@ -46,31 +46,33 @@ def load_frames(folder_path: str, train: bool):
     """
     files = tf.io.matching_files(folder_path + "/*.jpg")
 
-    sampled_indeces = tf.random.shuffle(tf.range(12))[:3]
+    sampled_indeces = tf.random.shuffle(tf.range(12))[:11]
     sampled_indeces = tf.sort(sampled_indeces)
     sampled_files = tf.gather(files, sampled_indeces)
 
     frame_0 = decode_img(sampled_files[0])
-    frame_1 = decode_img(sampled_files[2])
-    frame_t = decode_img(sampled_files[1])
-    
+    frame_1 = decode_img(sampled_files[-1])
+    # frame_t = decode_img(sampled_files[1])
+    frames_t = tf.map_fn(lambda x: decode_img(x), sampled_files[1:-1], dtype=tf.float32)
+    frames_t = tf.unstack(frames_t, 9)
     if train:
-        frames = data_augment(tf.concat([frame_0, frame_1, frame_t], axis=2))
-        frame_0, frame_1, frame_t = frames[:, :, :3], frames[:, :, 3:6], frames[:, :, 6:9]
-    return (frame_0, frame_1, sampled_indeces[1]), frame_t
+        frames = data_augment(tf.concat([frame_0, frame_1] + frames_t, axis=2))
+        # tf.print(frames.shape)
+        frames = tf.split(frames, 11, axis=2)
+        # frame_0, frame_1, frame_t = frames[:, :, :3], frames[:, :, 3:6], frames[:, :, 6:9]
+        frame_0, frame_1 = frames[0], frames[1]
+        frames_t = frames[2:]
+    return (frame_0, frame_1, sampled_indeces[1:-1]), frames_t[3]
 
 
 def data_augment(image):
     # resize and rancom crop
     image = tf.image.resize(image, [360, 360])
     # image = tf.image.resize(image, [352, 352])
-    image = tf.image.random_crop(image, size=[352, 352, 9])
+    image = tf.image.random_crop(image, size=[352, 352, 33])
     # random flip
     image = tf.image.random_flip_left_right(image)
     # normalization
-    # mean = tf.tile(tf.constant([0.485, 0.456, 0.406]))
-    # std = tf.tile(tf.constant([0.229, 0.224, 0.225]))
-    # image = (image - mean) / std
     # image = tf.image.per_image_standardization(image)
     return image
 

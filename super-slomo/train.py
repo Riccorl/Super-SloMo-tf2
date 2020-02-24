@@ -93,7 +93,6 @@ def train(
     model.save_weights(str(final_file), save_format="tf")
 
 
-@tf.function
 def train_step(model, inputs, targets, optimizer, loss_obj):
     """
     Train step for the model in input
@@ -114,7 +113,6 @@ def train_step(model, inputs, targets, optimizer, loss_obj):
     return loss_values, metric_values
 
 
-@tf.function
 def valid_step(model, inputs, targets, loss_obj):
     """
     Validation step for the model in input
