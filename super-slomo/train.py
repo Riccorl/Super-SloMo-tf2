@@ -12,7 +12,12 @@ from models.slomo_model import SloMoNet
 
 
 def train(
-    data_dir: str, model_dir: str, log_dir: pathlib.Path, epochs: int, batch_size: int
+    data_dir: str,
+    model_dir: str,
+    log_dir: pathlib.Path,
+    epochs: int,
+    batch_size: int,
+    n_frames: int,
 ):
     """
     Train funtion
@@ -30,7 +35,7 @@ def train(
     print("Eager execution: {}".format(tf.executing_eagerly()))
 
     data_dir = pathlib.Path(data_dir)
-    train_ds = dataset.load_dataset(data_dir / "train", batch_size)
+    train_ds = dataset.load_dataset(data_dir / "train", batch_size, n_frames=n_frames)
     len_train = tf.data.experimental.cardinality(train_ds).numpy()
     progbar = tf.keras.utils.Progbar(len_train)
     valid_ds = dataset.load_dataset(data_dir / "val", batch_size, train=False)
@@ -43,7 +48,7 @@ def train(
     chckpnt_dir.mkdir(parents=True, exist_ok=True)
 
     # Custom training
-    model = SloMoNet()
+    model = SloMoNet(n_frames)
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
@@ -105,7 +110,9 @@ def train_step(model, inputs, targets, optimizer, loss_obj):
     """
     with tf.GradientTape() as tape:
         predictions, losses_output = model(inputs, training=True)
-        loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
+        loss_values = loss_obj.compute_losses(
+            predictions, losses_output, inputs, targets
+        )
         metric_values = metrics.compute_metrics(targets, predictions)
 
     grads = tape.gradient(loss_values, model.trainable_variables)
@@ -142,6 +149,9 @@ def parse_args():
         default=32,
         type=int,
     )
+    parser.add_argument(
+        "--frames", help="number of target frames", dest="frames", default=9, type=int
+    )
     return parser.parse_args()
 
 
@@ -153,7 +163,7 @@ def main():
     train_log_dir.mkdir(parents=True, exist_ok=True)
 
     args = parse_args()
-    train(args.data_dir, args.model_dir, train_log_dir, args.epochs, args.batch_size)
+    train(args.data_dir, args.model_dir, train_log_dir, args.epochs, args.batch_size, args.frames)
 
 
 if __name__ == "__main__":
