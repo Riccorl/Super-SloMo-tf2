@@ -167,6 +167,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    v = tf.keras.applications.VGG16(weights="imagenet", include_top=False)
-    v.summary()
+    main()
