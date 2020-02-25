@@ -116,9 +116,8 @@ def train_step(model, inputs, targets, optimizer, loss_obj):
         loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
         metric_values = metrics.compute_metrics(targets, predictions)
 
-    optimizer.minimize(loss_values, model.trainable_variables)
-    # grads = tape.gradient(loss_values, model.trainable_variables)
-    # optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    grads = tape.gradient(loss_values, model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return loss_values, metric_values
 
 
