@@ -57,7 +57,7 @@ def load_frames(folder_path: str, train: bool, n_frames: int):
     frames_t = tf.map_fn(lambda x: decode_img(x), sampled_files[1:-1], dtype=tf.float32)
     frames_t = tf.unstack(frames_t, n_frames)
     if train:
-        frames = data_augment(tf.concat([frame_0, frame_1] + frames_t, axis=2), n_frames)
+        frames = data_augment(tf.concat([frame_0, frame_1] + frames_t, axis=2), n_frames + 2)
         # tf.print(frames.shape)
         frames = tf.split(frames, n_frames + 2, axis=2)
         # frame_0, frame_1, frame_t = frames[:, :, :3], frames[:, :, 3:6], frames[:, :, 6:9]
