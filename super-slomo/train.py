@@ -12,7 +12,7 @@ from models.slomo_model import SloMoNet
 
 
 def train(
-    data_dir: str, model_dir: str, log_dir: pathlib.Path, epochs: int, batch_size: int
+        data_dir: str, model_dir: str, log_dir: pathlib.Path, epochs: int, batch_size: int
 ):
     """
     Train funtion
@@ -42,15 +42,22 @@ def train(
     chckpnt_dir = model_dir / "chckpnt"
     chckpnt_dir.mkdir(parents=True, exist_ok=True)
 
+    # Tensorboard log directories
+    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+    test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+    train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+    test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+
     # Custom training
     model = SloMoNet()
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
-    status = ckpt.restore(manager.latest_checkpoint).assert_existing_objects_matched()
     num_epochs = 0
 
     if manager.latest_checkpoint:
+        status = ckpt.restore(manager.latest_checkpoint).assert_nontrivial_match()
         print("Restored from {}.".format(manager.latest_checkpoint))
         num_epochs = int(manager.latest_checkpoint.split("-")[-1]) - 1
     else:
@@ -77,6 +84,15 @@ def train(
                     ("ssim", metric_values[1]),
                 ],
             )
+        with train_summary_writer.as_default():
+            tf.summary.scalar('total-loss', loss_values[0], step=epoch)
+            tf.summary.scalar('rec_loss', loss_values[1], step=epoch)
+            tf.summary.scalar('perc-loss', loss_values[2], step=epoch)
+            tf.summary.scalar('smooth_loss', loss_values[3], step=epoch)
+            tf.summary.scalar('warping-loss', loss_values[4], step=epoch)
+            tf.summary.scalar('psnr', tf.reduce_mean(metric_values[0]), step=epoch)
+            tf.summary.scalar('ssim', tf.reduce_mean(metric_values[1]), step=epoch)
+
         for step, frames in enumerate(valid_ds):
             inputs, targets = frames
             val_loss_values, val_metric_values = valid_step(
@@ -94,6 +110,15 @@ def train(
                     ("val_ssim", val_metric_values[1]),
                 ],
             )
+        with test_summary_writer.as_default():
+            tf.summary.scalar('val_tot_loss', val_loss_values[0], step=epoch)
+            tf.summary.scalar('val_rec_loss', val_loss_values[1], step=epoch)
+            tf.summary.scalar('val_perc_loss', val_loss_values[2], step=epoch)
+            tf.summary.scalar('val_smooth_loss', val_loss_values[3], step=epoch)
+            tf.summary.scalar('val_warping_loss', val_loss_values[4], step=epoch)
+            tf.summary.scalar('val_psnr', tf.reduce_mean(val_loss_values[0]), step=epoch)
+            tf.summary.scalar('val_ssim', tf.reduce_mean(val_loss_values[1]), step=epoch)
+
         ckpt.step.assign_add(1)
         save_path = manager.save()
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
