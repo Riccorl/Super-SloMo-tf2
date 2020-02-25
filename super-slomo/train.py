@@ -47,6 +47,13 @@ def train(
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
+    status = ckpt.restore(manager.latest_checkpoint).assert_consumed()
+
+    if manager.latest_checkpoint:
+        print("Restored from {}.".format(manager.latest_checkpoint))
+    else:
+        print("No checkpoint provided, starting new train.")
+
     loss_obj = losses.Losses()
 
     for epoch in range(epochs):
@@ -109,8 +116,9 @@ def train_step(model, inputs, targets, optimizer, loss_obj):
         loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
         metric_values = metrics.compute_metrics(targets, predictions)
 
-    grads = tape.gradient(loss_values, model.trainable_variables)
-    optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    optimizer.minimize(loss_values, model.trainable_variables)
+    # grads = tape.gradient(loss_values, model.trainable_variables)
+    # optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return loss_values, metric_values
 
 
