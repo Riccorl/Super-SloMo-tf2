@@ -7,8 +7,12 @@ class Losses:
     def __init__(self):
         self.mae = tf.keras.losses.MeanAbsoluteError()
         self.mse = tf.keras.losses.MeanSquaredError()
-        model = tf.keras.applications.VGG16(weights="imagenet", include_top=False, input_shape=(352, 352, 3))
-        self.vgg16 = tf.keras.Model(model.inputs, model.get_layer("block4_conv3").output)
+        model = tf.keras.applications.VGG16(
+            weights="imagenet", include_top=False, input_shape=(352, 352, 3)
+        )
+        self.vgg16 = tf.keras.Model(
+            model.inputs, model.get_layer("block4_conv3").output
+        )
 
     @tf.function
     def reconstruction_loss(self, y_true, y_pred):
@@ -58,14 +62,11 @@ class Losses:
         :param backwarp_frames:
         :return:
         """
-        w_3 = sum([self.mae(frames_t[i], backwarp_frames[2][i]) for i in range(n)])
-        w_4 = sum([self.mae(frames_t[i], backwarp_frames[3][i]) for i in range(n)])
-        return (
-                self.mae(frame_0, backwarp_frames[0])
-                + self.mae(frame_1, backwarp_frames[1])
-                + (w_3 / n)
-                + (w_4 / n)
-        )
+        w_1 = self.mae(frame_0, backwarp_frames[0])
+        w_2 = self.mae(frame_1, backwarp_frames[1])
+        w_3 = sum([self.mae(frames_t[i], backwarp_frames[2][i]) for i in range(n)]) / n
+        w_4 = sum([self.mae(frames_t[i], backwarp_frames[3][i]) for i in range(n)]) / n
+        return w_1 + w_2 + w_3 + w_4
 
     @tf.function
     def smoothness_loss(self, f_01, f_10):
@@ -124,9 +125,9 @@ class Losses:
             smooth_loss += self.smoothness_loss(f_01, f_10)
 
         total_loss = (
-                config.REC_LOSS * rec_loss
-                + config.PERCEP_LOSS * perc_loss
-                + config.WRAP_LOSS * warp_loss
-                + config.SMOOTH_LOSS * smooth_loss
+            config.REC_LOSS * rec_loss
+            + config.PERCEP_LOSS * perc_loss
+            + config.WRAP_LOSS * warp_loss
+            + config.SMOOTH_LOSS * smooth_loss
         )
         return total_loss, rec_loss, perc_loss, smooth_loss, warp_loss

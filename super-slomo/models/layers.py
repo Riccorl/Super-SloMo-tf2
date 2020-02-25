@@ -16,7 +16,7 @@ class UNet(tf.keras.layers.Layer):
             filters=32, kernel_size=7, strides=1, padding="same"
         )
         self.encoder1 = Encoder(64, 5)
-        self.encoder2 = Encoder(128, 3)
+        self.encoder2 = Encoder(128, 5)
         self.encoder3 = Encoder(256, 3)
         self.encoder4 = Encoder(512, 3)
         self.encoder5 = Encoder(512, 3)

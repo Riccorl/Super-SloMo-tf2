@@ -5,9 +5,9 @@ from models import layers
 
 
 class SloMoNet(tf.keras.Model):
-    def __init__(self, n_frames=12, name="SloMoNet", **kwargs):
+    def __init__(self, n_frames=9, name="SloMoNet", **kwargs):
         super(SloMoNet, self).__init__(name=name, **kwargs)
-        self.t_slices = tf.tile(tf.constant(np.linspace(0, 1, n_frames)), [10])
+        self.t_slices = tf.tile(tf.constant(np.linspace(0, 1, 12)), [n_frames])
         self.flow_comp_layer = layers.UNet(4, name="flow_comp")
         self.optical_flow = layers.OpticalFlow(name="optical_flow")
         self.output_layer = layers.Output(name="predictions")
@@ -42,18 +42,9 @@ class SloMoNet(tf.keras.Model):
             warp2.append(g_i0_ft0)
             warp3.append(g_i1_ft1)
 
-        warp0 = self.warp_layers[0]([frames_0, flow_10])
-        warp1 = self.warp_layers[1]([frames_1, flow_01])
+        warp0 = self.warp_layers[0]([frames_1, flow_01])
+        warp1 = self.warp_layers[1]([frames_0, flow_10])
         losses_output += [warp0, warp1, warp2, warp3]
         predictions = tf.convert_to_tensor(predictions)
-        predictions = tf.reshape(
-            predictions,
-            [
-                frames_0.shape[0],
-                frames_i.shape[1],
-                frames_0.shape[1],
-                frames_0.shape[2],
-                frames_0.shape[3],
-            ],
-        )
+        predictions = tf.transpose(predictions, [1, 0, 2, 3, 4])
         return predictions, losses_output
