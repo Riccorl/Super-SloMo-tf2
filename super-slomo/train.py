@@ -48,15 +48,17 @@ def train(
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
     status = ckpt.restore(manager.latest_checkpoint).assert_existing_objects_matched()
+    num_epochs = 0
 
     if manager.latest_checkpoint:
         print("Restored from {}.".format(manager.latest_checkpoint))
+        num_epochs = int(manager.latest_checkpoint.split("-")[-1]) - 1
     else:
         print("No checkpoint provided, starting new train.")
 
     loss_obj = losses.Losses()
 
-    for epoch in range(epochs):
+    for epoch in range(num_epochs, epochs):
         print("Epoch: " + str(epoch))
         for step, frames in enumerate(train_ds):
             inputs, targets = frames
