@@ -154,13 +154,13 @@ class OpticalFlow(tf.keras.layers.Layer):
         self.backwarp_layer_t1 = BackWarp()
 
     def call(self, inputs, **kwargs):
-        frames_0, frames_1, f_01, f_10, t_indeces = inputs
+        frames_0, frames_1, f_01, f_10, t_indices = inputs
 
-        t0_value = (-1 * (1 - t_indeces)) * t_indeces
-        t1_value = t_indeces * t_indeces
+        t0_value = (-1 * (1 - t_indices)) * t_indices
+        t1_value = t_indices * t_indices
         f_t0_t = (t0_value * f_01) + (t1_value * f_10)
 
-        t1_value = (1 - t_indeces) * (1 - t_indeces)
+        t1_value = (1 - t_indices) * (1 - t_indices)
         f_t1_t = (t1_value * f_01) - (t0_value * f_10)
 
         # flow interpolation

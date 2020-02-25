@@ -47,9 +47,9 @@ def load_frames(folder_path: str, train: bool, n_frames: int):
     """
     files = tf.io.matching_files(folder_path + "/*.jpg")
 
-    sampled_indeces = tf.random.shuffle(tf.range(12))[:n_frames + 2]
-    sampled_indeces = tf.sort(sampled_indeces)
-    sampled_files = tf.gather(files, sampled_indeces)
+    sampled_indices = tf.random.shuffle(tf.range(12))[:n_frames + 2]
+    sampled_indices = tf.sort(sampled_indices)
+    sampled_files = tf.gather(files, sampled_indices)
 
     frame_0 = decode_img(sampled_files[0])
     frame_1 = decode_img(sampled_files[-1])
@@ -63,11 +63,11 @@ def load_frames(folder_path: str, train: bool, n_frames: int):
         # frame_0, frame_1, frame_t = frames[:, :, :3], frames[:, :, 3:6], frames[:, :, 6:9]
         frame_0, frame_1 = frames[0], frames[1]
         frames_t = frames[2:]
-    return (frame_0, frame_1, sampled_indeces[1:-1]), frames_t[3]
+    return (frame_0, frame_1, sampled_indices[1:-1]), frames_t
 
 
 def data_augment(image, n_frames):
-    # resize and rancom crop
+    # resize and random crop
     image = tf.image.resize(image, [360, 360])
     # image = tf.image.resize(image, [352, 352])
     image = tf.image.random_crop(image, size=[352, 352, n_frames * 3])
