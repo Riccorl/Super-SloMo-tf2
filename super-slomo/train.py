@@ -47,7 +47,7 @@ def train(
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
-    status = ckpt.restore(manager.latest_checkpoint).assert_consumed()
+    status = ckpt.restore(manager.latest_checkpoint).assert_existing_objects_matched()
 
     if manager.latest_checkpoint:
         print("Restored from {}.".format(manager.latest_checkpoint))
