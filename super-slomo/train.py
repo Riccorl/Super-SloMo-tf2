@@ -92,13 +92,13 @@ def train(
             )
 
             with train_summary_writer.as_default():
-                tf.summary.scalar('total-loss', loss_values[0], step=epoch)
-                tf.summary.scalar('rec_loss', loss_values[1], step=epoch)
-                tf.summary.scalar('perc-loss', loss_values[2], step=epoch)
-                tf.summary.scalar('smooth_loss', loss_values[3], step=epoch)
-                tf.summary.scalar('warping-loss', loss_values[4], step=epoch)
-                tf.summary.scalar('psnr', tf.reduce_mean(metric_values[0]), step=epoch)
-                tf.summary.scalar('ssim', tf.reduce_mean(metric_values[1]), step=epoch)
+                tf.summary.scalar('total-loss', loss_values[0])
+                tf.summary.scalar('rec_loss', loss_values[1])
+                tf.summary.scalar('perc-loss', loss_values[2])
+                tf.summary.scalar('smooth_loss', loss_values[3])
+                tf.summary.scalar('warping-loss', loss_values[4])
+                tf.summary.scalar('psnr', tf.reduce_mean(metric_values[0]))
+                tf.summary.scalar('ssim', tf.reduce_mean(metric_values[1]))
 
         for step, frames in enumerate(valid_ds):
             inputs, targets = frames
@@ -119,13 +119,13 @@ def train(
             )
 
             with test_summary_writer.as_default():
-                tf.summary.scalar('val_tot_loss', val_loss_values[0], step=epoch)
-                tf.summary.scalar('val_rec_loss', val_loss_values[1], step=epoch)
-                tf.summary.scalar('val_perc_loss', val_loss_values[2], step=epoch)
-                tf.summary.scalar('val_smooth_loss', val_loss_values[3], step=epoch)
-                tf.summary.scalar('val_warping_loss', val_loss_values[4], step=epoch)
-                tf.summary.scalar('val_psnr', tf.reduce_mean(val_metric_values[0]), step=epoch)
-                tf.summary.scalar('val_ssim', tf.reduce_mean(val_metric_values[1]), step=epoch)
+                tf.summary.scalar('val_tot_loss', val_loss_values[0])
+                tf.summary.scalar('val_rec_loss', val_loss_values[1])
+                tf.summary.scalar('val_perc_loss', val_loss_values[2])
+                tf.summary.scalar('val_smooth_loss', val_loss_values[3])
+                tf.summary.scalar('val_warping_loss', val_loss_values[4])
+                tf.summary.scalar('val_psnr', tf.reduce_mean(val_metric_values[0]))
+                tf.summary.scalar('val_ssim', tf.reduce_mean(val_metric_values[1]))
 
         ckpt.step.assign_add(1)
         save_path = manager.save()
