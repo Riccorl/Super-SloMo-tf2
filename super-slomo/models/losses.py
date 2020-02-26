@@ -60,13 +60,19 @@ class Losses:
         :param frames_t:
         :param frame_1:
         :param bw_values:
+        :param batch:
+        :param n:
         :return:
         """
         w_1 = self.mae(frame_0[batch], bw_values[0][batch])
         w_2 = self.mae(frame_1[batch], bw_values[1][batch])
-        w_3 = sum([self.mae(frames_t[i], bw_values[2][batch][i]) for i in range(n)]) / n
-        w_4 = sum([self.mae(frames_t[i], bw_values[3][batch][i]) for i in range(n)]) / n
-        return w_1 + w_2 + w_3 + w_4
+        w_3 = tf.reduce_sum(
+            [self.mae(frames_t[i], bw_values[2][batch][i]) for i in range(n)]
+        )
+        w_4 = tf.reduce_sum(
+            [self.mae(frames_t[i], bw_values[3][batch][i]) for i in range(n)]
+        )
+        return w_1 + w_2 + (w_3 / n) + (w_4 / n)
 
     @tf.function
     def smoothness_loss(self, f_01, f_10):
@@ -103,7 +109,7 @@ class Losses:
         """
         rec_loss, perc_loss, warp_loss, smooth_loss = 0, 0, 0, 0
         frames_0, frames_1, _ = inputs
-        n_frames = frames_t.shape[1]
+        batch_size, n_frames = frames_t.shape[0], frames_t.shape[1]
 
         # unpack loss variables
         f_01, f_10 = loss_values[:2]
@@ -121,6 +127,11 @@ class Losses:
             warp_loss += self.warping_loss(
                 frames_0, batch_true, frames_1, backwarp_values, i, n_frames
             )
+
+        rec_loss /= batch_size
+        perc_loss /= batch_size
+        smooth_loss /= batch_size
+        warp_loss /= batch_size
 
         total_loss = (
             config.REC_LOSS * rec_loss
