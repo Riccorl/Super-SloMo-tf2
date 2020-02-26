@@ -39,7 +39,7 @@ def train(
     train_ds = dataset.load_dataset(data_dir / "train", batch_size, n_frames=n_frames)
     len_train = tf.data.experimental.cardinality(train_ds).numpy()
     progbar = tf.keras.utils.Progbar(len_train)
-    valid_ds = dataset.load_dataset(data_dir / "val", batch_size, train=False)
+    valid_ds = dataset.load_dataset(data_dir / "val", batch_size, n_frames=n_frames, train=False)
     len_valid = tf.data.experimental.cardinality(valid_ds).numpy()
     val_progbar = tf.keras.utils.Progbar(len_valid)
 
@@ -180,10 +180,6 @@ def valid_step(model, inputs, targets, loss_obj):
     loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
     metric_values = metrics.compute_metrics(targets, predictions)
     return loss_values, metric_values
-
-
-def avg_values(values):
-    pass
 
 
 def parse_args():
