@@ -150,7 +150,7 @@ def parse_args():
         type=int,
     )
     parser.add_argument(
-        "--frames", help="number of target frames", dest="frames", default=9, type=int
+        "--frames", help="number of target frames", dest="frames", default=5, type=int
     )
     return parser.parse_args()
 

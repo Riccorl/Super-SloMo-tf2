@@ -45,7 +45,10 @@ class SloMoNet(tf.keras.Model):
 
         warp0 = self.warp_layers[0]([frames_1, flow_01])
         warp1 = self.warp_layers[1]([frames_0, flow_10])
+        # prepare for output shape
+        warp2 = tf.transpose(tf.stack(warp2), [1, 0, 2, 3, 4])
+        warp3 = tf.transpose(tf.stack(warp3), [1, 0, 2, 3, 4])
+        predictions = tf.transpose(tf.stack(predictions), [1, 0, 2, 3, 4])
+
         losses_output += [warp0, warp1, warp2, warp3]
-        predictions = tf.convert_to_tensor(predictions)
-        predictions = tf.transpose(predictions, [1, 0, 2, 3, 4])
         return predictions, losses_output

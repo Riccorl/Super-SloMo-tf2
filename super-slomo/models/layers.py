@@ -206,20 +206,3 @@ class Output(tf.keras.layers.Layer):
         frame_pred = ((1 - t_indeces) * v_t0 * g_i0_ft0) + (t_indeces * v_t1 * g_i1_ft1)
         frame_pred = tf.divide(frame_pred, z)
         return frame_pred
-
-
-class WarpingOutput(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super(WarpingOutput, self).__init__(**kwargs)
-
-    def build(self, input_shape):
-        self.backwarp_layer = BackWarp()
-        self.backwarp_layer2 = BackWarp()
-
-    def call(self, inputs, **kwargs):
-        frame_0, frame_1, f_01, f_10 = inputs
-
-        return [
-            self.backwarp_layer([frame_0, f_10]),
-            self.backwarp_layer2([frame_1, f_01]),
-        ]

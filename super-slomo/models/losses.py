@@ -53,19 +53,19 @@ class Losses:
         return feats
 
     @tf.function
-    def warping_loss(self, frame_0, frames_t, frame_1, backwarp_frames, n):
+    def warping_loss(self, frame_0, frames_t, frame_1, bw_values, batch, n):
         """
         Warping loss lw to model the quality of the computed optical flow
         :param frame_0:
         :param frames_t:
         :param frame_1:
-        :param backwarp_frames:
+        :param bw_values:
         :return:
         """
-        w_1 = self.mae(frame_0, backwarp_frames[0])
-        w_2 = self.mae(frame_1, backwarp_frames[1])
-        w_3 = sum([self.mae(frames_t[i], backwarp_frames[2][i]) for i in range(n)]) / n
-        w_4 = sum([self.mae(frames_t[i], backwarp_frames[3][i]) for i in range(n)]) / n
+        w_1 = self.mae(frame_0[batch], bw_values[0][batch])
+        w_2 = self.mae(frame_1[batch], bw_values[1][batch])
+        w_3 = sum([self.mae(frames_t[i], bw_values[2][batch][i]) for i in range(n)]) / n
+        w_4 = sum([self.mae(frames_t[i], bw_values[3][batch][i]) for i in range(n)]) / n
         return w_1 + w_2 + w_3 + w_4
 
     @tf.function
@@ -87,8 +87,8 @@ class Losses:
         :param frame:
         :return:
         """
-        x = tf.reduce_mean(tf.abs(frame[:, 1:, :, :] - frame[:, :-1, :, :]))
-        y = tf.reduce_mean(tf.abs(frame[:, :, 1:, :] - frame[:, :, :-1, :]))
+        x = tf.reduce_mean(tf.abs(frame[1:, :, :] - frame[:-1, :, :]))
+        y = tf.reduce_mean(tf.abs(frame[:, 1:, :] - frame[:, :-1, :]))
         return x + y
 
     def compute_losses(self, predictions, loss_values, inputs, frames_t):
@@ -103,26 +103,24 @@ class Losses:
         """
         rec_loss, perc_loss, warp_loss, smooth_loss = 0, 0, 0, 0
         frames_0, frames_1, _ = inputs
-
-        # tf.print("frames_t", frames_t.shape)
-        # frames_t = tf.reshape(frames_t, [9, 3, 352, 352, 3])
-        # tf.print("frames_t", frames_t.shape)
+        n_frames = frames_t.shape[1]
 
         # unpack loss variables
         f_01, f_10 = loss_values[:2]
         backwarp_values = loss_values[2:]
 
-        for batch_true, batch_pred in zip(frames_t, predictions):
+        for i, (batch_true, batch_pred) in enumerate(zip(frames_t, predictions)):
+            p_rec_loss, p_perc_loss = 0, 0
             for true, pred in zip(batch_true, batch_pred):
-                rec_loss += self.reconstruction_loss(true, pred)
-                perc_loss += self.perceptual_loss(true, pred)
+                p_rec_loss += self.reconstruction_loss(true, pred)
+                p_perc_loss += self.perceptual_loss(true, pred)
 
-            rec_loss /= len(batch_true)
-            perc_loss /= len(batch_true)
+            rec_loss += p_rec_loss / n_frames
+            perc_loss += p_perc_loss / n_frames
+            smooth_loss = self.smoothness_loss(f_01[i], f_10[i])
             warp_loss += self.warping_loss(
-                frames_0, batch_true, frames_1, backwarp_values, len(batch_true)
+                frames_0, batch_true, frames_1, backwarp_values, i, n_frames
             )
-            smooth_loss += self.smoothness_loss(f_01, f_10)
 
         total_loss = (
             config.REC_LOSS * rec_loss
