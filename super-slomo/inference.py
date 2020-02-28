@@ -77,7 +77,6 @@ def load_frames(frames):
     frame_0 = dataset.decode_img(frames[0])
     frame_1 = dataset.decode_img(frames[1])
     return frame_0, frame_1
-    # return frames
 
 
 def deprocess(image):
@@ -108,7 +107,7 @@ def predict(
     data_path, fps, w, h = extract_frames(video_path, output_path)
 
     model = SloMoNet(n_frames=n_frames + 2)
-    tf.train.Checkpoint(net=model).restore(str(model_path))
+    tf.train.Checkpoint(net=model).restore(str(model_path)).expect_partial()
     ds = load_dataset(data_path, 1)
     progbar = tf.keras.utils.Progbar(None)
 
