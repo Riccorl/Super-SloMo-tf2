@@ -107,31 +107,23 @@ def predict(
     """
     data_path, fps, w, h = extract_frames(video_path, output_path)
 
-    model = SloMoNet(n_frames=n_frames + 2)
+    model = SloMoNet(n_frames=n_frames)
     tf.train.Checkpoint(net=model).restore(str(model_path)).expect_partial()
-    ds = load_dataset(data_path, 1)
+    ds = load_dataset(data_path, 1, n_frames)
     progbar = tf.keras.utils.Progbar(None)
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out_video = cv2.VideoWriter(str(output_path), fourcc, fps_out, (w, h))
 
-    out_frames = []
     last_frame = None
     for step, frames in enumerate(ds):
         out_video.write(deprocess(frames[0][0]))
         predictions, _ = model(frames, training=False)
         for f in predictions[0]:
-            # predictions, _ = model(frames + ([f],), training=False)
             out_video.write(deprocess(f))
-            # out_frames.append(deprocess(predictions[0]))
             progbar.add(1)
         last_frame = frames[1][0]
     out_video.write(deprocess(last_frame))
-    # out_frames.append(deprocess(last_frame))
-
-    # print("\n Writing file...")
-    # for f in out_frames:
-    #     out_video.write(f)
     out_video.release()
     shutil.rmtree(data_path)
 
