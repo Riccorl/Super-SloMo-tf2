@@ -12,7 +12,6 @@ class SloMoNet(tf.keras.Model):
         self.flow_comp_layer = layers.UNet(4, name="flow_comp")
         self.optical_flow = layers.OpticalFlow(name="optical_flow")
         self.output_layer = layers.Output(name="predictions")
-        # self.warping_layer = layers.WarpingOutput(name="warping_output")
         self.warp_layers = [layers.BackWarp()] * 2
 
     def call(self, inputs, training=False, **kwargs):

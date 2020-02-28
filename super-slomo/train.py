@@ -65,7 +65,7 @@ def train(
     if manager.latest_checkpoint:
         status = ckpt.restore(manager.latest_checkpoint).assert_nontrivial_match()
         print("Restored from {}.".format(manager.latest_checkpoint))
-        num_epochs = int(manager.latest_checkpoint.split("-")[-1])
+        num_epochs = int(manager.latest_checkpoint.split("-")[-1]) + 1
     else:
         print("No checkpoint provided, starting new train.")
 
@@ -103,8 +103,8 @@ def train(
             tf.summary.scalar('perc-loss', avg_losses[2], step=epoch)
             tf.summary.scalar('smooth_loss', avg_losses[3], step=epoch)
             tf.summary.scalar('warping-loss', avg_losses[4], step=epoch)
-            tf.summary.scalar('psnr', tf.reduce_mean(avg_metrics[0]), step=epoch)
-            tf.summary.scalar('ssim', tf.reduce_mean(avg_metrics[1]), step=epoch)
+            tf.summary.scalar('psnr', avg_metrics[0], step=epoch)
+            tf.summary.scalar('ssim', avg_metrics[1], step=epoch)
 
         for step, frames in enumerate(valid_ds):
             inputs, targets = frames
@@ -134,8 +134,8 @@ def train(
             tf.summary.scalar('val_perc_loss', avg_val_losses[2], step=epoch)
             tf.summary.scalar('val_smooth_loss', avg_val_losses[3], step=epoch)
             tf.summary.scalar('val_warping_loss', avg_val_losses[4], step=epoch)
-            tf.summary.scalar('val_psnr', tf.reduce_mean(avg_val_metrics[0]), step=epoch)
-            tf.summary.scalar('val_ssim', tf.reduce_mean(avg_val_metrics[1]), step=epoch)
+            tf.summary.scalar('val_psnr', avg_val_metrics[0], step=epoch)
+            tf.summary.scalar('val_ssim', avg_val_metrics[1], step=epoch)
 
         ckpt.step.assign_add(1)
         save_path = manager.save()
