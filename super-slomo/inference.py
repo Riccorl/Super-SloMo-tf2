@@ -39,7 +39,7 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     return output_filename, fps, width, height
 
 
-def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
+def load_dataset(data_path: pathlib.Path, batch_size: int = 32, n_frames: int = 9):
     """
     Prepare the tf.data.Dataset for inference
     :param data_path: directory of the dataset
@@ -51,7 +51,7 @@ def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
         tf.data.Dataset.list_files(str(data_path / "*"), shuffle=False)
         .window(2, 1, drop_remainder=True)
         .flat_map(lambda window: window.batch(2))
-        .map(load_frames, num_parallel_calls=autotune)
+        .map(lambda x: load_frames(x, n_frames), num_parallel_calls=autotune)
         .batch(batch_size)
         .prefetch(autotune)
     )
@@ -68,7 +68,7 @@ def repeat_frames(frames, n_frames: int):
     return [(frames[0], frames[1], str(f)) for f in range(1, n_frames + 1)]
 
 
-def load_frames(frames):
+def load_frames(frames, n_frames):
     """
     Load the frames in the folder specified by folder_path
     :param frames: frames
@@ -76,7 +76,8 @@ def load_frames(frames):
     """
     frame_0 = dataset.decode_img(frames[0])
     frame_1 = dataset.decode_img(frames[1])
-    return frame_0, frame_1
+    sampled_indices = tf.range(1, n_frames)
+    return frame_0, frame_1, sampled_indices
 
 
 def deprocess(image):
@@ -117,10 +118,11 @@ def predict(
     out_frames = []
     last_frame = None
     for step, frames in enumerate(ds):
-        out_frames.append(deprocess(frames[0][0]))
-        for f in range(1, n_frames + 1):
-            predictions, _ = model(frames + ([f],), training=False)
-            out_video.write(deprocess(predictions[0][0]))
+        out_video.write(deprocess(frames[0][0]))
+        predictions, _ = model(frames, training=False)
+        for f in predictions[0]:
+            # predictions, _ = model(frames + ([f],), training=False)
+            out_video.write(deprocess(f))
             # out_frames.append(deprocess(predictions[0]))
             progbar.add(1)
         last_frame = frames[1][0]
