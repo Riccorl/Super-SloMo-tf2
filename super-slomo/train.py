@@ -95,8 +95,8 @@ def train(
                     ("ssim", metric_values[1]),
                 ],
             )
-        avg_losses = [sum(x) / len(avg_losses) for x in avg_losses]
-        avg_metrics = [sum(x) / len(avg_metrics) for x in avg_metrics]
+        avg_losses = [x / len(avg_losses) for x in avg_losses]
+        avg_metrics = [x / len(avg_metrics) for x in avg_metrics]
         with train_summary_writer.as_default():
             tf.summary.scalar('total-loss', avg_losses[0], step=epoch)
             tf.summary.scalar('rec_loss', avg_losses[1], step=epoch)
