@@ -112,7 +112,7 @@ def train(
                 model, inputs, targets, loss_obj
             )
             avg_val_losses = [sum(x) for x in zip(avg_val_losses, val_loss_values)]
-            avg_val_metrics = [sum(x) for x in zip(avg_val_metrics, val_metric_values)]
+            # avg_val_metrics = [sum(x) for x in zip(avg_val_metrics, val_metric_values)]
             val_progbar.update(
                 step + 1,
                 [
@@ -127,15 +127,15 @@ def train(
             )
 
         avg_val_losses = [x / len(avg_val_losses) for x in avg_val_losses]
-        avg_val_metrics = [x / len(avg_val_metrics) for x in avg_val_metrics]
+        # avg_val_metrics = [x / len(avg_val_metrics) for x in avg_val_metrics]
         with test_summary_writer.as_default():
             tf.summary.scalar('val_tot_loss', avg_val_losses[0], step=epoch)
             tf.summary.scalar('val_rec_loss', avg_val_losses[1], step=epoch)
             tf.summary.scalar('val_perc_loss', avg_val_losses[2], step=epoch)
             tf.summary.scalar('val_smooth_loss', avg_val_losses[3], step=epoch)
             tf.summary.scalar('val_warping_loss', avg_val_losses[4], step=epoch)
-            tf.summary.scalar('val_psnr', avg_val_metrics[0], step=epoch)
-            tf.summary.scalar('val_ssim', avg_val_metrics[1], step=epoch)
+            # tf.summary.scalar('val_psnr', avg_val_metrics[0], step=epoch)
+            # tf.summary.scalar('val_ssim', avg_val_metrics[1], step=epoch)
 
         ckpt.step.assign_add(1)
         save_path = manager.save()
