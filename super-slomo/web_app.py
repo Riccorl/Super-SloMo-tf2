@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for, sen
 from flask_ngrok import run_with_ngrok
 from werkzeug.utils import secure_filename
 
+import config
 import inference
 
 UPLOAD_FOLDER = '/content/Super-SloMo-tf2/super-slomo/uploads'
@@ -55,9 +56,15 @@ def predicted_file(filename):
                                filename)
 
 
+def check():
+    upload_path = os.path.join(config.CODE_DIR, "uploads")
+    if not os.path.exists(upload_path):
+        os.mkdir(upload_path)
+    predicted_path = os.path.join(config.CODE_DIR, "predicted")
+    if not os.path.exists(predicted_path):
+        os.mkdir(predicted_path)
+
+
 if __name__ == "__main__":
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.mkdir("uploads")
-    if not os.path.exists(PREDICT_FOLDER):
-        os.mkdir("predicted")
+    check()
     app.run()

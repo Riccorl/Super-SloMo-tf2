@@ -1,6 +1,7 @@
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "preprocessed"
+CODE_DIR = Path(__file__).resolve().parent
 TRAIN_DIR = DATA_DIR / "train"
 TEST_DIR = DATA_DIR / "test"
 VALID_DIR = DATA_DIR / "val"
