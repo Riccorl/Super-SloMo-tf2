@@ -56,4 +56,8 @@ def predicted_file(filename):
 
 
 if __name__ == "__main__":
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.mkdir("uploads")
+    if not os.path.exists(PREDICT_FOLDER):
+        os.mkdir("predicted")
     app.run()
