@@ -49,11 +49,11 @@ def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
     autotune = tf.data.experimental.AUTOTUNE
     ds = (
         tf.data.Dataset.list_files(str(data_path / "*"), shuffle=False)
-        .window(2, 1, drop_remainder=True)
-        .flat_map(lambda window: window.batch(2))
-        .map(load_frames, num_parallel_calls=autotune)
-        .batch(batch_size)
-        .prefetch(autotune)
+            .window(2, 1, drop_remainder=True)
+            .flat_map(lambda window: window.batch(2))
+            .map(load_frames, num_parallel_calls=autotune)
+            .batch(batch_size)
+            .prefetch(autotune)
     )
     return ds
 
@@ -90,11 +90,11 @@ def deprocess(image):
 
 
 def predict(
-    video_path: pathlib.Path,
-    model_path: pathlib.Path,
-    output_path: pathlib.Path,
-    n_frames: int,
-    fps_out: int,
+        video_path: pathlib.Path,
+        model_path: pathlib.Path,
+        output_path: pathlib.Path,
+        n_frames: int,
+        fps_out: int,
 ):
     """
 
@@ -130,6 +130,14 @@ def predict(
         out_video.write(f)
     out_video.release()
     shutil.rmtree(data_path)
+
+
+def predict_from_web(video_path, output_path, model_path, slomo_rate=2, fps=30):
+    video_path = pathlib.Path(video_path)
+    output_path = pathlib.Path(output_path)
+    print(output_path)
+    model_path = pathlib.Path(model_path)
+    predict(video_path, model_path, output_path, slomo_rate, fps)
 
 
 def parse_args():
