@@ -20,7 +20,7 @@ def train(
     n_frames: int,
 ):
     """
-    Train funtion
+    Train function
     :param data_dir: dataset directory
     :param model_dir: directory where to save the models
     :param log_dir: directory where to store logs for Tensorboard

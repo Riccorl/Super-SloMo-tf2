@@ -44,6 +44,7 @@ def load_dataset(data_path: pathlib.Path, batch_size: int = 32, n_frames: int = 
     Prepare the tf.data.Dataset for inference
     :param data_path: directory of the dataset
     :param batch_size: size of the batch
+    :param n_frames: size of the batch
     :return: the loaded dataset
     """
     autotune = tf.data.experimental.AUTOTUNE
@@ -68,15 +69,16 @@ def repeat_frames(frames, n_frames: int):
     return [(frames[0], frames[1], str(f)) for f in range(1, n_frames + 1)]
 
 
-def load_frames(frames, n_frames):
+def load_frames(frames, n_frames: int):
     """
     Load the frames in the folder specified by folder_path
     :param frames: frames
+    :param n_frames: number of frames between frame_0 and frame_1
     :return: the decoded frames
     """
     frame_0 = dataset.decode_img(frames[0])
     frame_1 = dataset.decode_img(frames[1])
-    sampled_indices = tf.range(1, n_frames)
+    sampled_indices = tf.range(1, n_frames + 1)
     return frame_0, frame_1, sampled_indices
 
 
