@@ -126,6 +126,8 @@ def train(
     final_file = model_dir / "weights_final_{}.tf".format(epochs)
     model.save_weights(str(final_file), save_format="tf")
 
+    save_tflite_model(model, model_dir)
+
 
 @tf.function
 def train_step(model, inputs, targets, optimizer, loss_obj):
@@ -162,6 +164,14 @@ def valid_step(model, inputs, targets, loss_obj):
     loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
     metric_values = metrics.compute_metrics(targets, predictions)
     return loss_values, metric_values
+
+
+def save_tflite_model(model, model_dir):
+    converter = tf.lite.TFLiteConverter.from_saved_model(model)
+    converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
+    tflite_model = converter.convert()
+    tflite_model_file = model_dir / "model.tflite"
+    tflite_model_file.write_bytes(tflite_model)
 
 
 def parse_args():
