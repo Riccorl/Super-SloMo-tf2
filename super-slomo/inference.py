@@ -112,22 +112,18 @@ def predict(
     ds = load_dataset(data_path, 1)
     progbar = tf.keras.utils.Progbar(None)
 
-    out_frames = []
-    last_frame = None
-    for step, frames in enumerate(ds):
-        out_frames.append(deprocess(frames[0][0]))
-        for f in range(1, n_frames + 1):
-            predictions, _ = model(frames + ([f],), training=False)
-            out_frames.append(deprocess(predictions[0]))
-            progbar.add(1)
-        last_frame = frames[1][0]
-    out_frames.append(deprocess(last_frame))
-
-    print("\n Writing file...")
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out_video = cv2.VideoWriter(str(output_path), fourcc, fps_out, (w, h))
-    for f in out_frames:
-        out_video.write(f)
+
+    last_frame = None
+    for step, frames in enumerate(ds):
+        out_video.write(deprocess(frames[0][0]))
+        for f in range(1, n_frames + 1):
+            predictions, _ = model(frames + ([f],), training=False)
+            out_video.write(deprocess(predictions[0]))
+            progbar.add(1)
+        last_frame = frames[1][0]
+    out_video.write(deprocess(last_frame))
     out_video.release()
     shutil.rmtree(data_path)
 

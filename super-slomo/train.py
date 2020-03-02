@@ -54,12 +54,12 @@ def train(
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
-    num_epochs = 0
+    num_epochs = 1
 
     if manager.latest_checkpoint:
         status = ckpt.restore(manager.latest_checkpoint).assert_nontrivial_match()
         print("Restored from {}.".format(manager.latest_checkpoint))
-        num_epochs = int(manager.latest_checkpoint.split("-")[-1]) - 1
+        num_epochs = int(manager.latest_checkpoint.split("-")[-1]) + 1
     else:
         print("No checkpoint provided, starting new train.")
 
