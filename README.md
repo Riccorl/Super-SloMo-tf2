@@ -1,6 +1,6 @@
 # Super Slo Mo TF2 
 
-[![tensorflow](https://aleen42.github.io/badges/src/tensorflow.svg)](https://aleen42.github.io/badges/src/tensorflow.svg)
+[![tensorflow](https://aleen42.github.io/badges/src/tensorflow.svg)](https://www.tensorflow.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Tensorflow 2 implementation of ["Super SloMo: High Quality Estimation of Multiple Intermediate Frames 
