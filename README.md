@@ -7,7 +7,7 @@ Tensorflow 2 implementation of ["Super SloMo: High Quality Estimation of Multipl
 for Video Interpolation" by Jiang H., Sun D., Jampani V., Yang M., Learned-Miller E. and Kautz J.](https://arxiv.org/abs/1712.00080)
 
 <p align="center">
-  <img src='./resources/f1_259.gif' alt="exaple gif">
+  <img width="345" height="194" src="resources/f1_259.gif">
 </p>
 
 ### Setup
