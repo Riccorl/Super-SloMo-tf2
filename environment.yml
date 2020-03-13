@@ -8,4 +8,5 @@ dependencies:
   - tqdm=4.42.1=py_0
   - pip:
     - black==19.10b0
+    - opencv-python==4.2.0.32
     - tensorflow-addons==0.8.2
