@@ -1,7 +1,17 @@
-# Super-SloMo-tf
+# Super Slo Mo TF2 
+
+[![tensorflow](https://aleen42.github.io/badges/src/tensorflow.svg)](https://aleen42.github.io/badges/src/tensorflow.svg)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Tensorflow 2 implementation of ["Super SloMo: High Quality Estimation of Multiple Intermediate Frames 
 for Video Interpolation" by Jiang H., Sun D., Jampani V., Yang M., Learned-Miller E. and Kautz J.](https://arxiv.org/abs/1712.00080)
+
+### Setup
+
+The code is based on Tensorflow 2.1. To install all the needed dependency, run
+
+- conda: `conda env create -f environment.yml`
+- pip: `pip install -r requirements.txt`
 
 ### Inference
 
