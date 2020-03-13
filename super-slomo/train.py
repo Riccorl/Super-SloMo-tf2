@@ -46,8 +46,8 @@ def train(
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     train_log_dir = log_dir / "gradient_tape" / current_time / "train"
     test_log_dir = log_dir / "gradient_tape/" / current_time / "test"
-    train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-    test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+    train_summary_writer = tf.summary.create_file_writer(str(train_log_dir))
+    test_summary_writer = tf.summary.create_file_writer(str(test_log_dir))
 
     # Custom training
     model = SloMoNet()
@@ -201,7 +201,7 @@ def main():
     train_log_dir.mkdir(parents=True, exist_ok=True)
 
     args = parse_args()
-    train(args.data_dir, args.model_dir, train_log_dir, args.epochs, args.batch_size)
+    train(args.data_dir, args.model, train_log_dir, args.epochs, args.batch_size)
 
 
 if __name__ == "__main__":
