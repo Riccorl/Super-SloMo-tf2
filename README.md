@@ -6,7 +6,9 @@
 Tensorflow 2 implementation of ["Super SloMo: High Quality Estimation of Multiple Intermediate Frames 
 for Video Interpolation" by Jiang H., Sun D., Jampani V., Yang M., Learned-Miller E. and Kautz J.](https://arxiv.org/abs/1712.00080)
 
-<div style="text-align:center"><img src='./resources/f1_259.gif' alt="exaple gif"></div>
+<p align="center">
+  <img src='./resources/f1_259.gif' alt="exaple gif">
+</p>
 
 ### Setup
 
