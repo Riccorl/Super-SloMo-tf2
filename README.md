@@ -10,7 +10,7 @@ for Video Interpolation" by Jiang H., Sun D., Jampani V., Yang M., Learned-Mille
   <img width="552" height="310.4" src="resources/rally1_259_12.gif">
 </p>
 
-### Setup
+## Setup
 
 The code is based on Tensorflow 2.1. To install all the needed dependency, run
 
@@ -29,7 +29,7 @@ source super-slomo/bin/activate
 pip install -r requirements.txt
 ```
 
-### Inference
+## Inference
 
 You can download the pre-trained model [here](https://www.dropbox.com/s/l35juwrsvcaw565/chckpnt259.zip). This model is trained for 259 epochs on 
 the adobe240fps dataset. It uses the single frame prediction mode. 
@@ -40,7 +40,7 @@ To generate a slomo video run:
 python super-slomo/inference.py path/to/source/video path/to/slomo/video --model path/to/checkpoint --n_frames 20 --fps 480
 ```
 
-### Train
+## Train
 
 #### Data Extraction
 
@@ -100,7 +100,7 @@ to control the number of frames to predict:
 python super-slomo/train.py path/to/frames --model path/to/checkpoints --epochs 100 --batch-size 32 --frames 9
 ```
 
-### Useful links
+## Useful links
 
 #### Dataset links
 
