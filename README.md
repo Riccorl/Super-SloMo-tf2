@@ -14,8 +14,19 @@ for Video Interpolation" by Jiang H., Sun D., Jampani V., Yang M., Learned-Mille
 
 The code is based on Tensorflow 2.1. To install all the needed dependency, run
 
-- conda: `conda env create -f environment.yml`
-- pip: `pip install -r requirements.txt`
+##### Conda
+
+```bash
+conda env create -f environment.yml
+```
+
+##### Pip 
+
+```bash
+python3 -m venv super-slomo
+source super-slomo/bin/activate
+pip install -r requirements.txt
+```
 
 ### Inference
 
@@ -72,18 +83,35 @@ For info run:
 python super-slomo/train.py -h
 ```
 
+##### Multi-frame moodel
 
-### Dataset links
+The model above predicts only one frame at time, due to hardware limitations. If you can access to powerful GPUs,
+you can predict more frame with a single sample (like in the original paper). To start, clone the multi-frame branch
+
+```bash
+git clone --branch multi-frame https://github.com/Riccorl/Super-SloMo-tf2.git 
+```
+
+then, follow the above instructions to setup and extract the frames. The training command has one additional parameter `--frames`
+to control the number of frames to predict:
+
+```bash
+python super-slomo/train.py path/to/frames --model path/to/checkpoints --epochs 100 --batch-size 32 --frames 9
+```
+
+### Useful links
+
+#### Dataset links
 
 * [Adobe 240fps](https://www.cs.ubc.ca/labs/imager/tr/2017/DeepVideoDeblurring)
 * [Need for Speed dataset](https://ci2cv.net/nfs/index.html)
 * [UCF101](https://www.crcv.ucf.edu/data/UCF101.php)
 
-### Random notes
+#### Random notes
 
 * [Evaluation script](https://people.cs.umass.edu/~hzjiang/projects/superslomo/UCF101_results.zip)
 
-### References
+#### References
 
 * [Paper](https://arxiv.org/abs/1712.00080)
 * [Project Page](https://people.cs.umass.edu/~hzjiang/projects/superslomo/)
