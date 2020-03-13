@@ -84,7 +84,7 @@ For info run:
 python super-slomo/train.py -h
 ```
 
-##### Multi-frame moodel
+##### Multi-frame model
 
 The model above predicts only one frame at time, due to hardware limitations. If you can access to powerful GPUs,
 you can predict more frame with a single sample (like in the original paper). To start, clone the multi-frame branch
