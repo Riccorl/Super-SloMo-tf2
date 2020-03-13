@@ -191,16 +191,10 @@ def save_tflite_model(model, model_dir):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(help="path to dataset folder", dest="data_dir")
-    parser.add_argument(help="path where to save model", dest="model_dir")
+    parser.add_argument("--model", help="path where to save model", required=True)
+    parser.add_argument("--epochs", help="number of epochs", default=40, type=int)
     parser.add_argument(
-        "--epochs", help="number of epochs", dest="epochs", default=40, type=int
-    )
-    parser.add_argument(
-        "--batch-size",
-        help="size of the batch",
-        dest="batch_size",
-        default=32,
-        type=int,
+        "--batch_size", help="size of the batch", default=32, type=int,
     )
     return parser.parse_args()
 

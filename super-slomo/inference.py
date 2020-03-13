@@ -142,12 +142,11 @@ def parse_args():
     parser.add_argument(
         "--n_frames",
         help="number of fps to insert between the frames",
-        dest="n_frames",
         default=2,
         type=int,
     )
     parser.add_argument(
-        "--fps", help="slomo factor", dest="fps", default=30, type=int,
+        "--fps", help="slomo factor", default=30, type=int,
     )
     return parser.parse_args()
 
