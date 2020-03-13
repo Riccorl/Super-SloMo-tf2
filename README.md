@@ -92,7 +92,7 @@ you can predict more frame with a single sample (like in the original paper). To
 git clone --branch multi-frame https://github.com/Riccorl/Super-SloMo-tf2.git 
 ```
 
-then, follow the above instructions to setup and extract the frames. The training command has one additional parameter `--frames`
+then, follow the instructions above to setup and extract the frames. The training command has one additional parameter `--frames`
 to control the number of frames to predict:
 
 ```bash
