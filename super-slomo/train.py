@@ -207,7 +207,7 @@ def main():
     train_log_dir.mkdir(parents=True, exist_ok=True)
 
     args = parse_args()
-    train(args.data_dir, args.model_dir, train_log_dir, args.epochs, args.batch_size)
+    train(args.data_dir, args.model, train_log_dir, args.epochs, args.batch_size)
 
 
 if __name__ == "__main__":
