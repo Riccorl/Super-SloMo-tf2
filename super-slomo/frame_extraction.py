@@ -21,18 +21,21 @@ def extract_frames(input_dir: Path, output_dir: Path, width: str, height: str):
         if video_file.suffix in video_ext:
             output_filename = output_dir / video_file.name
             Path(output_filename).mkdir(parents=True, exist_ok=True)
-            # vidcap = cv2.VideoCapture(str(video_file))
-            # success, image = vidcap.read()
-            # count = 0
-            # while success:
-            #     image = cv2.resize(image, (width, height))
-            #     cv2.imwrite("{}/frame%04d.jpg".format(output_filename) % count, image)  # save frame as JPEG file
-            #     success, image = vidcap.read()
-            #     count += 1
-            cmd = "ffmpeg -i {} -vf scale={}:{} -vsync 0 -qscale:v 2 {}/%04d.jpg".format(
-                video_file, width, height, output_filename
-            )
-            os.system(cmd)
+            try:
+                cmd = "ffmpeg -i {} -vf scale={}:{} -vsync 0 -qscale:v 2 {}/%04d.jpg".format(
+                    video_file, width, height, output_filename
+                )
+                os.system(cmd)
+            except:
+                print("ffmpeg not found, using opencv")
+                vidcap = cv2.VideoCapture(str(video_file))
+                success, image = vidcap.read()
+                count = 0
+                while success:
+                    image = cv2.resize(image, (width, height))
+                    cv2.imwrite("{}/frame%04d.jpg".format(output_filename) % count, image)  # save frame as JPEG file
+                    success, image = vidcap.read()
+                    count += 1
 
 
 def group_frames(input_dir: Path, output_dir: Path, n_frame: int = 12):

@@ -22,7 +22,6 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     pathlib.Path(output_filename).mkdir(parents=True, exist_ok=True)
     vidcap = cv2.VideoCapture(str(video_path))
 
-    fps = int(vidcap.get(cv2.CAP_PROP_FPS))
     width = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -36,7 +35,7 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
         success, image = vidcap.read()
         count += 1
     vidcap.release()
-    return output_filename, fps, width, height
+    return output_filename, width, height
 
 
 def load_dataset(data_path: pathlib.Path, batch_size: int = 32, n_frames: int = 9):
@@ -64,7 +63,7 @@ def repeat_frames(frames, n_frames: int):
     Load the frames in the folder specified by folder_path
     :param frames: frames
     :param n_frames: number of frames between frame_0 and frame_1
-    :return:
+    :return: the frames
     """
     return [(frames[0], frames[1], str(f)) for f in range(1, n_frames + 1)]
 
@@ -84,9 +83,9 @@ def load_frames(frames, n_frames: int):
 
 def deprocess(image):
     """
-
-    :param image:
-    :return:
+    Convert predicted image to 255
+    :param image: the image to convert
+    :return: image converted
     """
     return (255 * image).numpy().astype(np.uint8)
 
@@ -99,15 +98,15 @@ def predict(
     fps_out: int,
 ):
     """
-
-    :param video_path:
-    :param model_path:
-    :param output_path:
-    :param n_frames:
-    :param fps_out:
+    Predict the in-between frames
+    :param video_path: path to source video
+    :param model_path: path do model checkpoint
+    :param output_path: path where to save the new video
+    :param n_frames: number of frames to predict between two frames
+    :param fps_out: fps of the output video
     :return:
     """
-    data_path, fps, w, h = extract_frames(video_path, output_path)
+    data_path, w, h = extract_frames(video_path, output_path)
 
     model = SloMoNet(n_frames=n_frames)
     tf.train.Checkpoint(net=model).restore(str(model_path)).expect_partial()
@@ -136,14 +135,13 @@ def parse_args():
     parser.add_argument(help="path where to save the slomo video", dest="output_path")
     parser.add_argument("--model", help="path to model", dest="model_path")
     parser.add_argument(
-        "--slomo-rate",
+        "--n_frames",
         help="number of fps to insert between the frames",
-        dest="slomo_rate",
         default=2,
         type=int,
     )
     parser.add_argument(
-        "--fps", help="slomo factor", dest="fps", default=30, type=int,
+        "--fps", help="slomo factor", default=30, type=int,
     )
     return parser.parse_args()
 
@@ -153,7 +151,7 @@ def main():
     video_path = pathlib.Path(args.video_path)
     output_path = pathlib.Path(args.output_path)
     model_path = pathlib.Path(args.model_path)
-    predict(video_path, model_path, output_path, args.slomo_rate, args.fps)
+    predict(video_path, model_path, output_path, args.n_frames, args.fps)
 
 
 if __name__ == "__main__":

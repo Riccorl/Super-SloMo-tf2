@@ -8,7 +8,7 @@ class Losses:
         self.mae = tf.keras.losses.MeanAbsoluteError()
         self.mse = tf.keras.losses.MeanSquaredError()
         model = tf.keras.applications.VGG16(
-            weights="imagenet", include_top=False, input_shape=(352, 352, 3)
+            weights="imagenet", include_top=False
         )
         self.vgg16 = tf.keras.Model(
             model.inputs, model.get_layer("block4_conv3").output
@@ -33,8 +33,6 @@ class Losses:
         :param y_pred: The predicted values
         :return:
         """
-        # y_true = self.vgg16.predict((tf.expand_dims(y_true, 0)), steps=1)
-        # y_pred = self.vgg16.predict((tf.expand_dims(y_pred, 0)), steps=1)
         y_true = self.extract_feat(self.vgg16, tf.expand_dims(y_true, 0))
         y_pred = self.extract_feat(self.vgg16, tf.expand_dims(y_pred, 0))
         return self.mse(y_true, y_pred)

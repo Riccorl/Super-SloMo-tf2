@@ -1,0 +1,7 @@
+black==19.10b0
+numpy==1.18.1
+tensorboard==2.1.0
+tensorflow==2.1.0
+tensorflow-addons==0.8.2
+tensorflow-estimator==2.1.0
+tqdm==4.42.1

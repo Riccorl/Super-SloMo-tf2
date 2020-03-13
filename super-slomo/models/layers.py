@@ -178,7 +178,6 @@ class OpticalFlow(tf.keras.layers.Layer):
 
         # visibility map
         v_t0 = tf.keras.activations.sigmoid(flow_interp_out[:, :, :, 4:5])
-        # v_t0 = tf.tile(v_t0, [1, 1, 1, 3])
         v_t1 = 1 - v_t0
 
         f_t0 = f_t0_t + delta_f_t0
