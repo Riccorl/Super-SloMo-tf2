@@ -91,7 +91,7 @@ def train(
                 ],
             )
         avg_losses = [x / len(avg_losses) for x in avg_losses]
-        avg_metrics = [x / len(avg_metrics) for x in avg_metrics]
+        avg_metrics = [tf.reduce_mean(x) / len(avg_metrics) for x in avg_metrics]
         with train_summary_writer.as_default():
             tf.summary.scalar("total-loss", avg_losses[0], step=epoch)
             tf.summary.scalar("rec_loss", avg_losses[1], step=epoch)
@@ -122,7 +122,9 @@ def train(
             )
 
         avg_val_losses = [x / len(avg_val_losses) for x in avg_val_losses]
-        avg_val_metrics = [x / len(avg_val_metrics) for x in avg_val_metrics]
+        avg_val_metrics = [
+            tf.reduce_mean(x) / len(avg_val_metrics) for x in avg_val_metrics
+        ]
         with test_summary_writer.as_default():
             tf.summary.scalar("val_tot_loss", avg_val_losses[0], step=epoch)
             tf.summary.scalar("val_rec_loss", avg_val_losses[1], step=epoch)
@@ -138,7 +140,6 @@ def train(
 
     final_file = model_dir / "weights_final_{}.tf".format(epochs)
     model.save_weights(str(final_file), save_format="tf")
-    # save_tflite_model(model, model_dir)
 
 
 @tf.function
@@ -178,14 +179,6 @@ def valid_step(model, inputs, targets, loss_obj):
     loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
     metric_values = metrics.compute_metrics(targets, predictions)
     return loss_values, metric_values
-
-
-def save_tflite_model(model, model_dir):
-    converter = tf.lite.TFLiteConverter.from_saved_model(model)
-    converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
-    tflite_model = converter.convert()
-    tflite_model_file = model_dir / "model.tflite"
-    tflite_model_file.write_bytes(tflite_model)
 
 
 def parse_args():
