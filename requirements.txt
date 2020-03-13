@@ -1,5 +1,6 @@
 black==19.10b0
 numpy==1.18.1
+opencv-python==4.2.0.32
 tensorboard==2.1.0
 tensorflow==2.1.0
 tensorflow-addons==0.8.2
