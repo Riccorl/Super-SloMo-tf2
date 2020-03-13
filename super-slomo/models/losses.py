@@ -90,8 +90,8 @@ class Losses:
     @tf.function
     def compute_losses(self, predictions, loss_values, inputs, frames_t):
         """
-        Compute the losses (reconstruction loss, perceptual loss, smoothness loss, warping loss
-        and a comination of all the losses.
+        Compute the losses (reconstruction loss, perceptual loss, smoothness loss,
+        warping loss and a comination of all the losses.
         :param predictions: the predictions of the models
         :param loss_values: loss values from the GradientTape
         :param inputs: frames in input

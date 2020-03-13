@@ -32,7 +32,8 @@ def load_dataset(
             ds = ds.cache()
     if train:
         ds = ds.shuffle(buffer_size=buffer_size)
-    # `prefetch` lets the dataset fetch batches in the background while the model is training.
+    # `prefetch` lets the dataset fetch batches in the background while
+    # the model is training.
     ds = ds.batch(batch_size, drop_remainder=True).prefetch(autotune)
     return ds
 
@@ -67,6 +68,11 @@ def load_frames(folder_path: str, train: bool):
 
 
 def data_augment(image):
+    """
+    Augment the image by resizing, random cropping and random flipping it
+    :param image: the image to augment
+    :return: the image augmented
+    """
     # resize and rancom crop
     image = tf.image.resize(image, [360, 360])
     # image = tf.image.resize(image, [352, 352])

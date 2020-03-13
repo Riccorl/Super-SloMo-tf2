@@ -12,7 +12,7 @@ from models.slomo_model import SloMoNet
 
 
 def train(
-        data_dir: str, model_dir: str, log_dir: pathlib.Path, epochs: int, batch_size: int
+    data_dir: str, model_dir: str, log_dir: pathlib.Path, epochs: int, batch_size: int
 ):
     """
     Train funtion
@@ -44,8 +44,8 @@ def train(
 
     # Tensorboard log directories
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
-    test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+    train_log_dir = log_dir / "gradient_tape" / current_time / "train"
+    test_log_dir = log_dir / "gradient_tape/" / current_time / "test"
     train_summary_writer = tf.summary.create_file_writer(train_log_dir)
     test_summary_writer = tf.summary.create_file_writer(test_log_dir)
 
@@ -67,11 +67,17 @@ def train(
 
     for epoch in range(num_epochs, epochs):
         print("Epoch: " + str(epoch))
+        # Average metrics for tensorboard
+        avg_losses, avg_metrics = [0] * 5, [0] * 2
+        avg_val_losses, avg_val_metrics = [0] * 5, [0] * 2
+
         for step, frames in enumerate(train_ds):
             inputs, targets = frames
             loss_values, metric_values = train_step(
                 model, inputs, targets, optimizer, loss_obj
             )
+            avg_losses = [sum(x) for x in zip(avg_losses, loss_values)]
+            avg_metrics = [sum(x) for x in zip(avg_losses, avg_metrics)]
             progbar.update(
                 step + 1,
                 [
@@ -84,20 +90,24 @@ def train(
                     ("ssim", metric_values[1]),
                 ],
             )
+        avg_losses = [x / len(avg_losses) for x in avg_losses]
+        avg_metrics = [x / len(avg_metrics) for x in avg_metrics]
         with train_summary_writer.as_default():
-            tf.summary.scalar('total-loss', loss_values[0], step=epoch)
-            tf.summary.scalar('rec_loss', loss_values[1], step=epoch)
-            tf.summary.scalar('perc-loss', loss_values[2], step=epoch)
-            tf.summary.scalar('smooth_loss', loss_values[3], step=epoch)
-            tf.summary.scalar('warping-loss', loss_values[4], step=epoch)
-            tf.summary.scalar('psnr', tf.reduce_mean(metric_values[0]), step=epoch)
-            tf.summary.scalar('ssim', tf.reduce_mean(metric_values[1]), step=epoch)
+            tf.summary.scalar("total-loss", avg_losses[0], step=epoch)
+            tf.summary.scalar("rec_loss", avg_losses[1], step=epoch)
+            tf.summary.scalar("perc-loss", avg_losses[2], step=epoch)
+            tf.summary.scalar("smooth_loss", avg_losses[3], step=epoch)
+            tf.summary.scalar("warping-loss", avg_losses[4], step=epoch)
+            tf.summary.scalar("psnr", avg_metrics[0], step=epoch)
+            tf.summary.scalar("ssim", avg_metrics[1], step=epoch)
 
         for step, frames in enumerate(valid_ds):
             inputs, targets = frames
             val_loss_values, val_metric_values = valid_step(
                 model, inputs, targets, loss_obj
             )
+            avg_val_losses = [sum(x) for x in zip(avg_val_losses, val_loss_values)]
+            avg_val_metrics = [sum(x) for x in zip(avg_val_metrics, val_metric_values)]
             val_progbar.update(
                 step + 1,
                 [
@@ -110,14 +120,17 @@ def train(
                     ("val_ssim", val_metric_values[1]),
                 ],
             )
+
+        avg_val_losses = [x / len(avg_val_losses) for x in avg_val_losses]
+        avg_val_metrics = [x / len(avg_val_metrics) for x in avg_val_metrics]
         with test_summary_writer.as_default():
-            tf.summary.scalar('val_tot_loss', val_loss_values[0], step=epoch)
-            tf.summary.scalar('val_rec_loss', val_loss_values[1], step=epoch)
-            tf.summary.scalar('val_perc_loss', val_loss_values[2], step=epoch)
-            tf.summary.scalar('val_smooth_loss', val_loss_values[3], step=epoch)
-            tf.summary.scalar('val_warping_loss', val_loss_values[4], step=epoch)
-            tf.summary.scalar('val_psnr', tf.reduce_mean(val_metric_values[0]), step=epoch)
-            tf.summary.scalar('val_ssim', tf.reduce_mean(val_metric_values[1]), step=epoch)
+            tf.summary.scalar("val_tot_loss", avg_val_losses[0], step=epoch)
+            tf.summary.scalar("val_rec_loss", avg_val_losses[1], step=epoch)
+            tf.summary.scalar("val_perc_loss", avg_val_losses[2], step=epoch)
+            tf.summary.scalar("val_smooth_loss", avg_val_losses[3], step=epoch)
+            tf.summary.scalar("val_warping_loss", avg_val_losses[4], step=epoch)
+            tf.summary.scalar("val_psnr", avg_val_metrics[0], step=epoch)
+            tf.summary.scalar("val_ssim", avg_val_metrics[1], step=epoch)
 
         ckpt.step.assign_add(1)
         save_path = manager.save()
@@ -125,8 +138,7 @@ def train(
 
     final_file = model_dir / "weights_final_{}.tf".format(epochs)
     model.save_weights(str(final_file), save_format="tf")
-
-    save_tflite_model(model, model_dir)
+    # save_tflite_model(model, model_dir)
 
 
 @tf.function
@@ -142,7 +154,9 @@ def train_step(model, inputs, targets, optimizer, loss_obj):
     """
     with tf.GradientTape() as tape:
         predictions, losses_output = model(inputs, training=True)
-        loss_values = loss_obj.compute_losses(predictions, losses_output, inputs, targets)
+        loss_values = loss_obj.compute_losses(
+            predictions, losses_output, inputs, targets
+        )
         metric_values = metrics.compute_metrics(targets, predictions)
 
     grads = tape.gradient(loss_values, model.trainable_variables)
