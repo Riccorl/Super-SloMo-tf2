@@ -1,10 +1,10 @@
-name: cv
+name: super-slomo
 channels:
   - defaults
 dependencies:
   - pip=20.0.2=py37_1
   - python=3.7.6=h0371630_2
-  # - tensorflow=2.1.0
+  - tensorflow=2.1.0
   - tqdm=4.42.1=py_0
   - pip:
     - black==19.10b0
