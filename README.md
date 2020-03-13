@@ -18,6 +18,7 @@ The code is based on Tensorflow 2.1. To install all the needed dependency, run
 
 ```bash
 conda env create -f environment.yml
+source activate super-slomo
 ```
 
 ##### Pip 
