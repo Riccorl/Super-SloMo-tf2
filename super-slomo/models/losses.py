@@ -26,7 +26,8 @@ class Losses:
     @tf.function
     def perceptual_loss(self, y_true, y_pred):
         """
-
+        Perceptual loss preserves details of the predictions
+        and make interpolated frames sharper
         :param y_true: Ground truth values
         :param y_pred: The predicted values
         :return:
