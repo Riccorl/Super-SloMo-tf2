@@ -63,12 +63,14 @@ def predict(
     tf.train.Checkpoint(net=model).restore(str(model_path)).expect_partial()
     progbar = tf.keras.utils.Progbar(None)
     file_list = [f for f in data_path.glob("**/*_0?.png")]
+    print("Number of files:", len(file_list))
     for i, j in zip(file_list[0::2], file_list[1::2]):
-        out_frame_path = str(i).rsplit("_")[0] + "_01_interp.png"
-        frames = load_frames([i, j])
+        out_frame_path = str(i).rsplit("_", 1)[0] + "_01_interp.png"
+        frame_0, frame_1 = load_frames([str(i), str(j)])
+        frames = (frame_0[None, :], frame_1[None, :])
         predictions, _ = model(frames + ([1],), training=False)
         out_frame = deprocess(predictions[0])
-        cv2.imwrite(out_frame_path, out_frame)
+        cv2.imwrite(out_frame_path, cv2.cvtColor(out_frame, cv2.COLOR_BGR2RGB))
         progbar.add(1)
 
 
@@ -82,6 +84,7 @@ def parse_args():
 def main():
     args = parse_args()
     data_path = pathlib.Path(args.data_path)
+    print("Data path:", data_path)
     model_path = pathlib.Path(args.model_path)
     predict(data_path, model_path)
 
