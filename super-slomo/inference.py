@@ -18,8 +18,8 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     :param output_path:
     :return: the output filename and the size of the frames
     """
-    output_filename = output_path.parent / "tmp"
-    pathlib.Path(output_filename).mkdir(parents=True, exist_ok=True)
+    output_filename = output_path.parent / ".inference"
+    pathlib.Path(output_filename).mkdir(parents=True, exist_ok=False)
     vidcap = cv2.VideoCapture(str(video_path))
 
     width = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
