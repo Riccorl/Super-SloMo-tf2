@@ -37,7 +37,7 @@ the adobe240fps dataset. It uses the single frame prediction mode.
 To generate a slomo video run:
 
 ```bash
-python super-slomo/inference.py path/to/source/video path/to/slomo/video --model path/to/checkpoint --n_frames 20 --fps 480
+python super-slomo/inference.py path/to/source/video path/to/slomo/video --model path/to/chckpnt259/ckpt-259 --n_frames 20 --fps 480
 ```
 
 ## Train
