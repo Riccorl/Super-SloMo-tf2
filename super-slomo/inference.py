@@ -2,6 +2,7 @@ import argparse
 import os
 import pathlib
 import shutil
+import tempfile
 
 import cv2
 import numpy as np
@@ -16,10 +17,9 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     Extract frames from videos in the input folder.
     :param video_path:
     :param output_path:
-    :return: the output filename and the size of the frames
+    :return: the output data_path and image dimensions
     """
-    output_filename = output_path.parent / ".inference"
-    pathlib.Path(output_filename).mkdir(parents=True, exist_ok=False)
+    output_dir = tempfile.mkdtemp()
     vidcap = cv2.VideoCapture(str(video_path))
 
     width = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -30,12 +30,13 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     while success:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         cv2.imwrite(
-            "{}/frame%04d.jpg".format(output_filename) % count, image
+            "{}/frame%04d.jpg".format(output_dir) % count, image
         )  # save frame as JPEG file
         success, image = vidcap.read()
         count += 1
     vidcap.release()
-    return output_filename, width, height
+    data_path = output_dir
+    return data_path, width, height
 
 
 def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
@@ -46,8 +47,13 @@ def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
     :return: the loaded dataset
     """
     autotune = tf.data.experimental.AUTOTUNE
+    
+
+    #
+    # Create TensowFlow Dataset
+
     ds = (
-        tf.data.Dataset.list_files(str(data_path / "*"), shuffle=False)
+        tf.data.Dataset.list_files(str(data_path) + "/frame*", shuffle=False)
         .window(2, 1, drop_remainder=True)
         .flat_map(lambda window: window.batch(2))
         .map(load_frames, num_parallel_calls=autotune)
