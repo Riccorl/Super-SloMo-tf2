@@ -12,11 +12,10 @@ import dataset
 from models.slomo_model import SloMoNet
 
 
-def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
+def extract_frames(video_path: pathlib.Path):
     """
     Extract frames from videos in the input folder.
     :param video_path: path to source video
-    :param output_path:
     :return: the output filename and the size of the frames
     """
     data_path = tempfile.mkdtemp()
@@ -103,7 +102,7 @@ def predict(
     :param fps_out: fps of the output video
     :return:
     """
-    data_path, w, h = extract_frames(video_path, output_path)
+    data_path, w, h = extract_frames(video_path)
 
     model = SloMoNet(n_frames=n_frames + 2)
     tf.train.Checkpoint(net=model).restore(str(model_path)).expect_partial()
