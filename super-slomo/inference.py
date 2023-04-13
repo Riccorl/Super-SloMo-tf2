@@ -2,6 +2,7 @@ import argparse
 import os
 import pathlib
 import shutil
+import tempfile
 
 import cv2
 import numpy as np
@@ -18,8 +19,7 @@ def extract_frames(video_path: pathlib.Path, output_path: pathlib.Path):
     :param output_path:
     :return: the output filename and the size of the frames
     """
-    output_filename = output_path.parent / "tmp"
-    pathlib.Path(output_filename).mkdir(parents=True, exist_ok=True)
+    output_filename = tempfile.mkdtemp()
     vidcap = cv2.VideoCapture(str(video_path))
 
     width = int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -47,7 +47,7 @@ def load_dataset(data_path: pathlib.Path, batch_size: int = 32):
     """
     autotune = tf.data.experimental.AUTOTUNE
     ds = (
-        tf.data.Dataset.list_files(str(data_path / "*"), shuffle=False)
+        tf.data.Dataset.list_files(str(data_path) + "/frame*", shuffle=False)
         .window(2, 1, drop_remainder=True)
         .flat_map(lambda window: window.batch(2))
         .map(load_frames, num_parallel_calls=autotune)
