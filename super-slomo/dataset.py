@@ -51,9 +51,9 @@ def load_frames(folder_path: str, train: bool, n_frames: int):
     files = tf.io.matching_files(folder_path + "/*.jpg")
 
     sampled_indices = tf.random.shuffle(tf.range(12))[: n_frames + 2]
-    flip_sequence = tf.random.uniform([], maxval=1, dtype=tf.int32)
+    flip_sequence = tf.random.uniform([], maxval=2, dtype=tf.int32) == 1
     sampled_indices = tf.where(
-        flip_sequence == 1 and train,
+        tf.logical_and(flip_sequence, train),
         tf.sort(sampled_indices, direction="DESCENDING"),
         tf.sort(sampled_indices)
     )
