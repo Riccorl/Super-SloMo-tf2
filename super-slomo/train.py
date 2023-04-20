@@ -122,7 +122,13 @@ def train(
             )
 
         avg_val_losses = [x / len(avg_val_losses) for x in avg_val_losses]
-        avg_val_metrics = [x / len(avg_val_metrics) for x in avg_val_metrics]
+        #avg_val_metrics = [x / len(avg_val_metrics) for x in avg_val_metrics]
+
+        avg_val_metrics = [
+            tf.reduce_mean(x) / len(avg_val_metrics) for x in avg_val_metrics
+        ]
+       
+       
         with test_summary_writer.as_default():
             tf.summary.scalar("val_tot_loss", avg_val_losses[0], step=epoch)
             tf.summary.scalar("val_rec_loss", avg_val_losses[1], step=epoch)
