@@ -51,10 +51,14 @@ def train(
 
     # Custom training
     model = SloMoNet()
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.0001)
+    #optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=optimizer, net=model)
     manager = tf.train.CheckpointManager(ckpt, str(chckpnt_dir), max_to_keep=3)
     num_epochs = 1
+
+    #
+    # load checkpoint
 
     if manager.latest_checkpoint:
         status = ckpt.restore(manager.latest_checkpoint).assert_nontrivial_match()
@@ -62,6 +66,10 @@ def train(
         num_epochs = int(manager.latest_checkpoint.split("-")[-1]) + 1
     else:
         print("No checkpoint provided, starting new train.")
+
+    
+    # calculate the 10% save step size
+    saveStep = len_train // 10
 
     loss_obj = losses.Losses()
 
@@ -78,6 +86,27 @@ def train(
             )
             avg_losses = [sum(x) for x in zip(avg_losses, loss_values)]
             avg_metrics = [sum(x) for x in zip(avg_losses, avg_metrics)]
+
+            # if 10% done, save weights
+            if step > 0: 
+              if step % saveStep == 0:
+              
+                # save weights 
+                weights_file = model_dir / "weights_step.tf"
+                model.save_weights(str(weights_file), save_format="tf")
+                
+                # save checkpoint
+                save_path = manager.save()
+                
+                # output save time
+                now = datetime.datetime.now()
+                saveTime = now.strftime("%H:%M:%S")  # userfriendly now
+                print("        saved at ", saveTime, end='', flush=True)
+                
+            
+            #
+            # update progbar
+
             progbar.update(
                 step + 1,
                 [
@@ -90,6 +119,12 @@ def train(
                     ("ssim", metric_values[1]),
                 ],
             )
+            
+            
+        #
+        # all frames done
+
+
         avg_losses = [x / len(avg_losses) for x in avg_losses]
         avg_metrics = [x / len(avg_metrics) for x in avg_metrics]
         with train_summary_writer.as_default():
@@ -141,6 +176,9 @@ def train(
         ckpt.step.assign_add(1)
         save_path = manager.save()
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
+
+        weights_file = model_dir / "weights.tf"
+        model.save_weights(str(weights_file), save_format="tf")
 
     final_file = model_dir / "weights_final_{}.tf".format(epochs)
     model.save_weights(str(final_file), save_format="tf")
