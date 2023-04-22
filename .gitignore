@@ -3,7 +3,7 @@ raw_data
 data
 videos
 models
-
+log
 
 ### VisualStudioCode ###
 .vscode/*

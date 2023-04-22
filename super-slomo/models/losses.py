@@ -95,10 +95,12 @@ class Losses:
         y = tf.reduce_mean(tf.abs(frame[:, 1:, :] - frame[:, :-1, :]))
         return x + y
 
+
+    @tf.function
     def compute_losses(self, predictions, loss_values, inputs, frames_t):
         """
         Compute the losses (reconstruction loss, perceptual loss, smoothness loss, warping loss
-        and a comination of all the losses.
+        and a combination of all the losses).
         :param predictions: the predictions of the models
         :param loss_values: loss values from the GradientTape
         :param inputs: frames in input
@@ -108,29 +110,30 @@ class Losses:
         rec_loss, perc_loss, warp_loss, smooth_loss = 0, 0, 0, 0
         frames_0, frames_1, _ = inputs
         batch_size, n_frames = frames_t.shape[0], frames_t.shape[1]
-
+    
         # unpack loss variables
         f_01, f_10 = loss_values[:2]
         backwarp_values = loss_values[2:]
-
-        for i, (batch_true, batch_pred) in enumerate(zip(frames_t, predictions)):
+    
+        for i in range(batch_size):
             p_rec_loss, p_perc_loss = 0, 0
-            for true, pred in zip(batch_true, batch_pred):
+            for j in range(n_frames):
+                true, pred = frames_t[i, j], predictions[i, j]
                 p_rec_loss += self.reconstruction_loss(true, pred)
                 p_perc_loss += self.perceptual_loss(true, pred)
-
+    
             rec_loss += p_rec_loss / n_frames
             perc_loss += p_perc_loss / n_frames
             smooth_loss = self.smoothness_loss(f_01[i], f_10[i])
             warp_loss += self.warping_loss(
-                frames_0, batch_true, frames_1, backwarp_values, i, n_frames
+                frames_0[i], frames_t[i], frames_1[i], backwarp_values, i, n_frames
             )
-
+    
         rec_loss /= batch_size
         perc_loss /= batch_size
         smooth_loss /= batch_size
         warp_loss /= batch_size
-
+    
         total_loss = (
             config.REC_LOSS * rec_loss
             + config.PERCEP_LOSS * perc_loss
@@ -138,3 +141,4 @@ class Losses:
             + config.SMOOTH_LOSS * smooth_loss
         )
         return total_loss, rec_loss, perc_loss, smooth_loss, warp_loss
+        
